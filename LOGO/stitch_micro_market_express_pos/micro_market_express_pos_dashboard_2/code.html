@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Micro Market Express POS Dashboard - Help</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1152d4",
+                        "accent-green": "#00ff88",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0a0f1d",
+                        "glass": "rgba(255, 255, 255, 0.7)",
+                        "cobalt-deep": "#050a1f",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer components {
+            .glass-panel {
+                background: rgba(255, 255, 255, 0.75);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            .dark .glass-panel {
+                background: rgba(16, 22, 34, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .modal-glass {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(40px);
+                -webkit-backdrop-filter: blur(40px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .neumorphic-inset {
+                box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.05), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+            }
+            .neumorphic-button {
+                box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15), -6px -6px 12px rgba(255, 255, 255, 0.05);
+            }
+            .neumorphic-circle {
+                box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3), -4px -4px 10px rgba(255, 255, 255, 0.1);
+            }
+            .neon-glow {
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+            }
+            .neon-text-glow {
+                text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #475569;
+                border-radius: 10px;
+            }
+            .sitemap-node::after {
+                content: '';
+                position: absolute;
+                left: -1rem;
+                top: 50%;
+                width: 1rem;
+                height: 1px;
+                background: rgba(255, 255, 255, 0.2);
+            }
+        }
+    </style>
+</head>
+<body class="font-display bg-cobalt-deep text-slate-100 overflow-hidden h-screen relative">
+<div class="flex h-screen w-full flex-col bg-gradient-to-br from-primary/20 via-cobalt-deep to-primary/10 blur-xl scale-105 pointer-events-none">
+<header class="flex items-center justify-between px-8 py-4 glass-panel z-10 mx-6 mt-4 rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-2 rounded-xl text-white">
+<span class="material-symbols-outlined text-2xl">storefront</span>
+</div>
+<div>
+<h1 class="text-xl font-extrabold tracking-tight text-primary">Micro Market Express</h1>
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-accent-green"></span>
+</span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sistema Online</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-right text-slate-300">
+<p class="text-2xl font-bold tabular-nums">12:45:22 PM</p>
+<p class="text-xs font-medium text-slate-500">Lunes, 24 de Mayo 2026</p>
+</div>
+</div>
+</header>
+<main class="flex flex-1 gap-6 p-6 overflow-hidden">
+<aside class="w-64 flex flex-col gap-4">
+<div class="flex flex-col gap-2">
+<div class="h-12 w-full glass-panel rounded-2xl mb-2"></div>
+<div class="h-12 w-full glass-panel rounded-2xl"></div>
+<div class="h-12 w-full glass-panel rounded-2xl"></div>
+</div>
+</aside>
+<section class="flex-1 flex flex-col gap-6">
+<div class="h-16 w-full glass-panel rounded-2xl"></div>
+<div class="grid grid-cols-4 gap-4">
+<div class="h-48 glass-panel rounded-2xl"></div>
+<div class="h-48 glass-panel rounded-2xl"></div>
+<div class="h-48 glass-panel rounded-2xl"></div>
+<div class="h-48 glass-panel rounded-2xl"></div>
+</div>
+</section>
+<aside class="w-[400px] glass-panel rounded-2xl"></aside>
+</main>
+</div>
+<div class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-md">
+<div class="modal-glass w-full max-w-5xl h-[85vh] rounded-[2.5rem] relative flex flex-col overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/20">
+<button class="absolute top-8 right-8 size-12 rounded-full flex items-center justify-center neumorphic-circle text-white hover:text-accent-green transition-all bg-white/5 active:scale-90 group">
+<span class="material-symbols-outlined font-bold">close</span>
+</button>
+<div class="p-12 flex flex-col h-full">
+<div class="flex items-center gap-4 mb-10">
+<div class="size-14 rounded-2xl bg-accent-green/10 flex items-center justify-center text-accent-green border border-accent-green/20">
+<span class="material-symbols-outlined text-4xl">help_center</span>
+</div>
+<div>
+<h2 class="text-4xl font-black tracking-tight text-white italic">CENTRO DE AYUDA <span class="text-accent-green font-normal not-italic">2026</span></h2>
+<p class="text-slate-400 font-medium">Asistencia técnica y accesos rápidos del sistema</p>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8 flex-1 overflow-hidden">
+<div class="col-span-4 flex flex-col gap-6">
+<h3 class="text-xs font-black uppercase tracking-[0.2em] text-accent-green neon-text-glow">Atajos de Teclado</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-default group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-accent-green group-hover:scale-110 transition-transform">search</span>
+<span class="font-bold text-slate-200">Buscar Producto</span>
+</div>
+<kbd class="px-3 py-1 rounded-lg bg-slate-900 border border-white/20 text-accent-green font-black text-sm shadow-lg">F1</kbd>
+</div>
+<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-default group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-accent-green group-hover:scale-110 transition-transform">shopping_cart_checkout</span>
+<span class="font-bold text-slate-200">Cerrar Venta</span>
+</div>
+<kbd class="px-3 py-1 rounded-lg bg-slate-900 border border-white/20 text-accent-green font-black text-sm shadow-lg">F2</kbd>
+</div>
+<div class="flex items-center justify-between p-4 rounded-2xl bg-accent-green/10 border border-accent-green/30 cursor-default group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-accent-green">live_help</span>
+<span class="font-bold text-slate-100">Menú Ayuda</span>
+</div>
+<kbd class="px-3 py-1 rounded-lg bg-accent-green text-slate-950 font-black text-sm shadow-lg">F5</kbd>
+</div>
+<div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-default group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-red-400 group-hover:scale-110 transition-transform">logout</span>
+<span class="font-bold text-slate-200">Salir / Cancelar</span>
+</div>
+<kbd class="px-3 py-1 rounded-lg bg-slate-900 border border-white/20 text-slate-400 font-black text-sm shadow-lg">ESC</kbd>
+</div>
+</div>
+<div class="mt-auto p-6 rounded-3xl bg-slate-900/60 border border-white/10">
+<h4 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-accent-green text-lg">support_agent</span>
+                                Soporte Técnico
+                            </h4>
+<div class="space-y-2 mb-6">
+<p class="text-xs text-slate-400">¿Necesitas ayuda inmediata?</p>
+<p class="text-lg font-black text-white">+1 (800) MICRO-2026</p>
+</div>
+<button class="w-full py-4 rounded-xl bg-slate-800 text-accent-green font-bold text-sm neumorphic-button hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">chat_bubble</span>
+                                INICIAR CHAT LIVE
+                            </button>
+</div>
+</div>
+<div class="col-span-8 flex flex-col gap-6">
+<h3 class="text-xs font-black uppercase tracking-[0.2em] text-accent-green neon-text-glow">Mapa del Sistema</h3>
+<div class="flex-1 bg-white/5 border border-white/10 rounded-3xl p-8 custom-scrollbar overflow-y-auto">
+<div class="space-y-8">
+<div class="relative">
+<div class="inline-flex items-center gap-3 px-5 py-2.5 rounded-xl bg-primary text-white font-bold shadow-xl">
+<span class="material-symbols-outlined">dashboard</span>
+                                        Dashboard Principal
+                                    </div>
+<div class="mt-6 ml-8 space-y-6 border-l border-white/10 pl-8">
+<div class="relative sitemap-node">
+<div class="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-slate-200 font-semibold text-sm">
+<span class="material-symbols-outlined text-accent-green text-sm">inventory_2</span>
+                                                Inventario y Productos
+                                            </div>
+<div class="mt-4 ml-6 space-y-3 border-l border-white/5 pl-6">
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Control de Stock</div>
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Registro de Lotes</div>
+</div>
+</div>
+<div class="relative sitemap-node">
+<div class="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-slate-200 font-semibold text-sm">
+<span class="material-symbols-outlined text-accent-green text-sm">analytics</span>
+                                                Reportes y Ventas
+                                            </div>
+<div class="mt-4 ml-6 space-y-3 border-l border-white/5 pl-6">
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Cierre de Caja (X/Z)</div>
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Historial de Transacciones</div>
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Reportes Fiscales</div>
+</div>
+</div>
+<div class="relative sitemap-node">
+<div class="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-slate-200 font-semibold text-sm">
+<span class="material-symbols-outlined text-accent-green text-sm">settings</span>
+                                                Configuración
+                                            </div>
+<div class="mt-4 ml-6 space-y-3 border-l border-white/5 pl-6">
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Gestión de Usuarios</div>
+<div class="relative sitemap-node text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">• Parámetros de Sistema</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+<span>Versión de Sistema: 4.8.2-PRO</span>
+<div class="flex gap-4">
+<a class="hover:text-accent-green transition-colors" href="#">Manual de Usuario</a>
+<a class="hover:text-accent-green transition-colors" href="#">Términos de Licencia</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

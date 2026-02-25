@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Micro Market Express Analytics Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#25f459",
+                        "background-light": "#f5f8f6",
+                        "background-dark": "#0a0f1e", // Deep cobalt variant for high-end look
+                        "glass": "rgba(255, 255, 255, 0.03)",
+                        "glass-border": "rgba(255, 255, 255, 0.12)",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glass-card-hover:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(37, 244, 89, 0.4);
+            transition: all 0.3s ease;
+        }
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(37, 244, 89, 0.4);
+        }
+        .neumorphic-inset {
+            background: rgba(10, 15, 30, 0.3);
+            box-shadow: inset 4px 4px 8px rgba(0,0,0,0.5), inset -4px -4px 8px rgba(255,255,255,0.02);
+        }
+        .chart-line {
+            filter: drop-shadow(0 0 8px #25f459);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen overflow-x-hidden">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 glass-panel border-r border-glass-border flex flex-col z-20">
+<div class="p-8">
+<div class="flex items-center gap-3 mb-10">
+<div class="size-10 rounded-xl bg-primary flex items-center justify-center neon-glow">
+<span class="material-symbols-outlined text-background-dark font-bold">bolt</span>
+</div>
+<div>
+<h1 class="text-sm font-bold leading-tight tracking-tight">MICRO MARKET</h1>
+<p class="text-[10px] text-primary font-bold tracking-widest uppercase">Express Analytics</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-glass hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">point_of_sale</span>
+<span class="text-sm font-medium">TPV</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl bg-primary/10 text-primary border border-primary/20 transition-all" href="#">
+<span class="material-symbols-outlined leading-none">monitoring</span>
+<span class="text-sm font-bold">Estadísticas</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-glass hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-sm font-medium">Inventario</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-glass hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-sm font-medium">Clientes</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-8">
+<div class="glass-panel p-4 rounded-2xl flex items-center gap-3 border border-primary/10">
+<div class="size-8 rounded-full bg-slate-800 border border-glass-border overflow-hidden">
+<img alt="User avatar" data-alt="Professional user profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIJm0l01JuLbOMLAF20quRvsDT8WkiO9KOJT2mNCnEgeFZof9Vt8qvzPLwLrwdeUWUm27rP_TgBnc6QHOtDV7uE2uajkAqddRA86CGg2Rbm69Gsqec9ldJ-DF9EGaNMd0uaEsemPDQgZQhQXgvUpj8yemqECTqzTZF1pZGsKkuUsN1SchabQzyVRrhuN_BAO9Yt5R9cRD74ftKvvpOIZv7Sp1uQNb7Rl3D6eqWAA6VGyEdGDo4dAZORLLhBDNcR7Gis4IIBYCoMVyt"/>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold">Admin Panel</span>
+<span class="text-[10px] text-slate-400">Ver. 2026.4.1</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto relative">
+<!-- Header -->
+<header class="flex items-center justify-between px-10 py-6 border-b border-glass-border sticky top-0 bg-background-dark/50 backdrop-blur-md z-10">
+<div>
+<h2 class="text-2xl font-bold tracking-tight">Dashboard General</h2>
+<p class="text-sm text-slate-400 font-medium">Bienvenido, aquí está el resumen de hoy</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-4 py-2 rounded-xl glass-panel text-sm font-medium border border-glass-border">
+<span class="material-symbols-outlined text-sm text-primary">calendar_today</span>
+<span>01 Oct - 07 Oct, 2026</span>
+</div>
+<button class="bg-primary text-background-dark font-bold px-5 py-2 rounded-xl text-sm neon-glow hover:brightness-110 transition-all">
+                        Descargar Reporte
+                    </button>
+</div>
+</header>
+<div class="p-10 space-y-8">
+<!-- Top Row KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="glass-panel glass-card-hover p-6 rounded-2xl relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 size-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+<p class="text-slate-400 text-sm font-medium mb-1">Ventas Hoy</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold">$1,240.00</h3>
+<span class="text-primary text-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +12%
+                            </span>
+</div>
+</div>
+<div class="glass-panel glass-card-hover p-6 rounded-2xl relative overflow-hidden group">
+<p class="text-slate-400 text-sm font-medium mb-1">Ticket Promedio</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold">$15.50</h3>
+<span class="text-primary text-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +5.2%
+                            </span>
+</div>
+</div>
+<div class="glass-panel glass-card-hover p-6 rounded-2xl relative overflow-hidden group">
+<p class="text-slate-400 text-sm font-medium mb-1">Clientes Atendidos</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold">82</h3>
+<span class="text-red-400 text-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span> -2%
+                            </span>
+</div>
+</div>
+<div class="glass-panel glass-card-hover p-6 rounded-2xl relative overflow-hidden group">
+<p class="text-slate-400 text-sm font-medium mb-1">Productos Top</p>
+<div class="flex items-end justify-between">
+<h3 class="text-xl font-bold truncate pr-4">Bebidas Ener.</h3>
+<span class="text-primary text-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">star</span> 18%
+                            </span>
+</div>
+</div>
+</div>
+<!-- Central Area: Chart -->
+<div class="glass-panel p-8 rounded-3xl">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h3 class="text-xl font-bold">Ventas Netas</h3>
+<p class="text-sm text-slate-400">Rendimiento en tiempo real</p>
+</div>
+<div class="flex bg-slate-900/50 p-1 rounded-xl border border-glass-border">
+<button class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400">Día</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary text-background-dark neon-glow">Semana</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400">Mes</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-400">Año</button>
+</div>
+</div>
+<!-- Simulated Chart Container -->
+<div class="h-[300px] w-full relative">
+<!-- Chart Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between opacity-10">
+<div class="w-full border-t border-slate-300"></div>
+<div class="w-full border-t border-slate-300"></div>
+<div class="w-full border-t border-slate-300"></div>
+<div class="w-full border-t border-slate-300"></div>
+<div class="w-full border-t border-slate-300"></div>
+</div>
+<!-- Simulated SVG Line Chart -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 1000 300">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#25f459" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#25f459" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Area -->
+<path d="M0,250 L150,220 L300,260 L450,140 L600,180 L750,80 L900,120 L1000,100 L1000,300 L0,300 Z" fill="url(#chartGradient)"></path>
+<!-- Line -->
+<path class="chart-line" d="M0,250 L150,220 L300,260 L450,140 L600,180 L750,80 L900,120 L1000,100" fill="none" stroke="#25f459" stroke-width="4"></path>
+<!-- Points -->
+<circle class="neon-glow" cx="150" cy="220" fill="#25f459" r="5"></circle>
+<circle class="neon-glow" cx="450" cy="140" fill="#25f459" r="5"></circle>
+<circle class="neon-glow" cx="750" cy="80" fill="#25f459" r="5"></circle>
+</svg>
+<!-- X-Axis Labels -->
+<div class="flex justify-between mt-4 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+<span>Lun</span>
+<span>Mar</span>
+<span>Mie</span>
+<span>Jue</span>
+<span>Vie</span>
+<span>Sab</span>
+<span>Dom</span>
+</div>
+</div>
+</div>
+<!-- Bottom Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
+<!-- Category Doughnut -->
+<div class="glass-panel p-8 rounded-3xl">
+<h3 class="text-lg font-bold mb-6">Ventas por Categoría</h3>
+<div class="relative size-48 mx-auto flex items-center justify-center">
+<svg class="size-full transform -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="12"></circle>
+<circle class="chart-line" cx="50" cy="50" fill="none" r="40" stroke="#25f459" stroke-dasharray="251.2" stroke-dashoffset="100" stroke-linecap="round" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="none" r="40" stroke="#00d2ff" stroke-dasharray="251.2" stroke-dashoffset="180" stroke-linecap="round" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="none" r="40" stroke="#a155ff" stroke-dasharray="251.2" stroke-dashoffset="230" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl font-bold">100%</span>
+<span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total</span>
+</div>
+</div>
+<div class="mt-8 space-y-3">
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary neon-glow"></div>
+<span class="text-slate-300">Bebidas</span>
+</div>
+<span class="font-bold">45%</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-[#00d2ff]"></div>
+<span class="text-slate-300">Snacks</span>
+</div>
+<span class="font-bold">30%</span>
+</div>
+<div class="flex items-center justify-between text-sm">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-[#a155ff]"></div>
+<span class="text-slate-300">Otros</span>
+</div>
+<span class="font-bold">25%</span>
+</div>
+</div>
+</div>
+<!-- Latest Sales Neumorphic List -->
+<div class="lg:col-span-2 glass-panel p-8 rounded-3xl">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-lg font-bold">Últimas Ventas</h3>
+<a class="text-xs text-primary font-bold hover:underline" href="#">Ver todas</a>
+</div>
+<div class="space-y-4">
+<div class="neumorphic-inset rounded-2xl p-4 flex items-center justify-between group border border-glass-border">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-xl bg-slate-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">receipt_long</span>
+</div>
+<div>
+<p class="text-sm font-bold">#TRX-8902</p>
+<p class="text-xs text-slate-500">Hace 4 minutos</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:block">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">Completado</span>
+</div>
+<span class="text-lg font-bold text-white">$42.50</span>
+</div>
+</div>
+<div class="neumorphic-inset rounded-2xl p-4 flex items-center justify-between group border border-glass-border">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-xl bg-slate-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">receipt_long</span>
+</div>
+<div>
+<p class="text-sm font-bold">#TRX-8901</p>
+<p class="text-xs text-slate-500">Hace 12 minutos</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:block">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">Completado</span>
+</div>
+<span class="text-lg font-bold text-white">$12.90</span>
+</div>
+</div>
+<div class="neumorphic-inset rounded-2xl p-4 flex items-center justify-between group border border-glass-border">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-xl bg-slate-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">receipt_long</span>
+</div>
+<div>
+<p class="text-sm font-bold">#TRX-8900</p>
+<p class="text-xs text-slate-500">Hace 28 minutos</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:block">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">Completado</span>
+</div>
+<span class="text-lg font-bold text-white">$25.00</span>
+</div>
+</div>
+<div class="neumorphic-inset rounded-2xl p-4 flex items-center justify-between group border border-glass-border">
+<div class="flex items-center gap-4">
+<div class="size-10 rounded-xl bg-slate-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400">receipt_long</span>
+</div>
+<div>
+<p class="text-sm font-bold">#TRX-8899</p>
+<p class="text-xs text-slate-500">Hace 35 minutos</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:block">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">Completado</span>
+</div>
+<span class="text-lg font-bold text-white">$8.50</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Micro Market Express POS Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1152d4",
+                        "accent-green": "#00ff88",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0a0f1d",
+                        "glass": "rgba(255, 255, 255, 0.7)",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-panel {
+            background: rgba(16, 22, 34, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neumorphic-inset {
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.05), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+        }
+        .neumorphic-button {
+            box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.08), -6px -6px 12px rgba(255, 255, 255, 1);
+        }
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 overflow-hidden h-screen">
+<div class="flex h-screen w-full flex-col bg-gradient-to-br from-primary/10 via-background-light to-primary/5 dark:from-background-dark dark:via-background-dark dark:to-primary/20">
+<!-- Top Header -->
+<header class="flex items-center justify-between px-8 py-4 glass-panel z-10 mx-6 mt-4 rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-2 rounded-xl text-white">
+<span class="material-symbols-outlined text-2xl">storefront</span>
+</div>
+<div>
+<h1 class="text-xl font-extrabold tracking-tight text-primary">Micro Market Express</h1>
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-accent-green"></span>
+</span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sistema Online</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-right">
+<p class="text-2xl font-bold tabular-nums">12:45:22 PM</p>
+<p class="text-xs font-medium text-slate-500">Lunes, 24 de Mayo 2026</p>
+</div>
+<div class="h-10 w-px bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center h-11 w-11 rounded-xl glass-panel text-slate-600 dark:text-slate-300 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">wifi</span>
+</button>
+<button class="flex items-center justify-center h-11 w-11 rounded-xl glass-panel text-slate-600 dark:text-slate-300 hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+</button>
+<div class="flex items-center gap-3 glass-panel pl-2 pr-4 py-1.5 rounded-full">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4XvDUPiDC_oUeWdRiVl6tD1IbX6vC27nHQxebOzF6x4uDaDbcJ3og4XBLMgcZQSASgOE-hqSYOx6x0bsuE9wG4g6Zqf2J4uWur30HlsSDLgOlTdBi64IWhxWTVZahqJT_TBSibxno7DkeQjgxjbnnu7dNwtMfQkPBqviEpZz_DK4t0bmU3FYoxwcdtlrjtY1Fbg9PiWElxmnpAXiWeActmscYrpGKCyUqimFetvO6Vexlu2v16YrHfAtLJKm-TFQJ4ANNQXHPrFKE"/>
+</div>
+<span class="text-sm font-bold">Admin User</span>
+</div>
+</div>
+</div>
+</header>
+<main class="flex flex-1 gap-6 p-6 overflow-hidden">
+<!-- Left Sidebar Navigation -->
+<aside class="w-64 flex flex-col gap-4">
+<div class="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">Categorías</p>
+<button class="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-primary text-white shadow-lg shadow-primary/30 transition-all">
+<span class="material-symbols-outlined">liquor</span>
+<span class="text-sm font-bold">Bebidas</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3.5 rounded-2xl glass-panel text-slate-600 dark:text-slate-300 hover:bg-white/50 transition-all">
+<span class="material-symbols-outlined">bakery_dining</span>
+<span class="text-sm font-semibold">Snacks</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3.5 rounded-2xl glass-panel text-slate-600 dark:text-slate-300 hover:bg-white/50 transition-all">
+<span class="material-symbols-outlined">nutrition</span>
+<span class="text-sm font-semibold">Frutas</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3.5 rounded-2xl glass-panel text-slate-600 dark:text-slate-300 hover:bg-white/50 transition-all">
+<span class="material-symbols-outlined">egg_alt</span>
+<span class="text-sm font-semibold">Lácteos</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3.5 rounded-2xl glass-panel text-slate-600 dark:text-slate-300 hover:bg-white/50 transition-all">
+<span class="material-symbols-outlined">cleaning_services</span>
+<span class="text-sm font-semibold">Limpieza</span>
+</button>
+<button class="flex items-center gap-3 px-4 py-3.5 rounded-2xl glass-panel text-slate-600 dark:text-slate-300 hover:bg-white/50 transition-all">
+<span class="material-symbols-outlined">sanitizer</span>
+<span class="text-sm font-semibold">Higiene</span>
+</button>
+</div>
+<div class="mt-auto">
+<button class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-900 transition-all">
+<span class="material-symbols-outlined text-lg">help</span>
+                        Ayuda (F5)
+                    </button>
+</div>
+</aside>
+<!-- Central Product Area -->
+<section class="flex-1 flex flex-col gap-6">
+<!-- Search Bar -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="w-full h-16 pl-14 pr-24 glass-panel rounded-2xl border-none focus:ring-2 focus:ring-primary/20 text-lg font-medium placeholder:text-slate-400 neumorphic-inset" placeholder="Buscar productos por nombre o código... (F1)" type="text"/>
+<div class="absolute inset-y-4 right-4 flex items-center px-4 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-500">
+                        F1
+                    </div>
+</div>
+<!-- Product Grid -->
+<div class="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-6">
+<div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+<!-- Product Card 1 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Coca Cola bottle product" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQYFskYCWcBSFbJmqChf2HZ_qe1RR_-WMLZmYR77eK7bqoyXP4bsyotf8E88jFLqyzvxI955fRuG5kKwuqobJcXNke6QV4sVuLtT4wO133WXLDbsO5zh-eiFu81XqySMDYwqTTb2SJXmAE1OfsW5aMcm5ktX_UUCNTARlBERcrdVwJaPxqk0TSXbh8LLdrziXtuvTBxHlNu2OPcG5x9e-wyk2D1pPrkfB9x_7NafUuWi7qBHENL55dvV1r92Et8UpAHN27eT09Qr4d"/>
+<div class="absolute top-2 right-2 bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-md">
+                                    IN STOCK
+                                </div>
+</div>
+<h3 class="font-bold text-sm mb-1">Coca Cola 500ml</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$1.50</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Potato chips bag snack" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsBwqE01InVIX2GaPIT4LlBAB_xfywil_iNeWvSnVmegVCiRfHfOT5glFumBu111NnvM5JyR0F5sK4HhKv-YG3pHFBrRYgBxwLYhxJZ1FN2WpHlWuJNPKIPNNIshJqCrsKZwtjwJLu_mWepFJiLxqR-dAknRPON8gPUM3Sadq79hwcxaMpPS5rzh8P-RdLja-y9PDCb1ALLhZF56aTQf2Q6fwuB_O04RjUw5kdR3ZaPjUDengI922pzcUWJDBx2gpKc0zWmEuIISzg"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Papas Lays 50g</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$0.80</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Milk carton 1L" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZ1uesO79fzDC5ZIUzyFr2o4Ib381WUBBEjMqrfhDBtWAg7p6-4EJKFHzUWPAg8PvcNd2AgZvayiB7Rs1AJuOCVOcTZg3OlAGKFPBmMCGpA5kyCLJl70x68oAmUhixWJxqCcovQrjlm5GTYcU9nrNZ_9YB0Hrjj1vpJ5XAbGE4HgImsZALUJy1lzYrbOkxORpLchqySGmyh0ZpWAVa1U1kGHx8dSXB8l_cohJ-b5OCcDq9QPQ6BnerG0zpTMDrKjKXQ-r5UaIWKX0g"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Leche Entera 1L</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$2.10</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Red apple fruit" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4yUz5O0AvOTgNF3etiAYosSz0UcqYIK_n1z52hNGc1fVzYQN1Mjb3PYn27Cbo-F-QdcmyG7jzilh-SEK2rUG2gGvKW38mOj77zOHdIWp4GsNKz4sPUz2K6XD4YDA868DWh5ucDS4naK42l1aa_evnjm2s3qYAeKEz-ao1RU690nVDf9d9bv8ywhfl-S0T1lqZ9aQmAolunEFQ2dkmB3116UBH4ZOtued_OTq74WbIYhWi0Cwl1Mo4gNhsYn11jCy59yxOvb5hIwJD"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Manzana Roja</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$0.50</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 5 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Mineral water bottle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC30zw-uQToRgIamL7A2q7nDgPVcgHb0d08h91FCgHEYsmGa3wiVPAGBkn9gwD3yb1SQQYLov7XOKyCqSrm03FrFxPjFpTdaJWwLeO-kB8Z9BW86XdiL23NWdvR9OhCpLG22YyyA-7LoQVzRaaxLvmnFlZ8tzcie8lYwZoUqPruQOKeyyaTYEUwa6oBttaGYfyV4kvlMl-xLFswRGk6DXPrKrrbuZdTo6l0ZEtc7JQyX31byVVDhkifxxsmweFEd1EHOdDfiYeZCa2W"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Agua Mineral</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$0.90</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 6 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Oreo cookies package" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfVwsNeJr9WGkv2YKHyKjTu6y97I8GMe7c_tCakw8bp-83tozod3zvzX_NLbPpGiW3Mxg8gSvO0qR-IkWHBB8y6HntR99Ct09jvpYz5qvYZiEiplLodIgTvQ8UYZOTGo4gou5JHUC9_AINHTLTYf2YkS4yGxMCj5VXFcdyfklWROY6K9XyAZKkF7MUEMvZbrOSkeJH2PqZn89zpGwGpe48oOT_WuwygLxAijz_iNrieMArYfDbDTSPMTaA2cwA64mY-E_KGs3u3_DX"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Galletas Oreo</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$1.20</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 7 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Orange juice bottle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1ojNXqx6nCT7IuB4QTlYKh08I97ejdUdA5oasDBbbe6oZCrT88wXgJYhoC6IdQaiQlDR6wQGQQxkbZ-zDPmArUr2Kg_pxRQBM5PA475qVvgCZw0Md8bciEu7RDQOMb3r5arYTrm6ZS74EU5zBy21PyyYXwVt79gZyNf446IcuXJnmvbsd-dJkWNdcRm-bmQON8YfvBjlSZWdszPxfeN4YicYzlgLkaK2HgaY4m0NlSfZ9XTJ4RaEa4-Djeio8keAYz5pSVtlzLwWg"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Jugo de Naranja</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$1.75</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 8 -->
+<div class="group glass-panel p-3 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 cursor-pointer">
+<div class="relative aspect-square rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Natural yogurt cup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAku6YYvDdC-XVRnLMrh1SWzzwY4---fq9M7UkNFw8Kr9cY78-VGiPJTGV1ZmMOPQHYsYj3LxvsHFlpJtLW9hVMPUrRMT4ZaAw6_ptGKMDF66_RUCrnpYOx5iyalBF2dDSJbYU2eBOn00j0xqahrOfo5FrF0OvE4JJFd-z_HNUNe6Ug98u_H1x8NF7BNjC4PH9ckxgc7Trbl4Xcx_7fpEfBoNA5_UnXJK5vWhzcnE_PpY_pQN2VT1FMl8AbT-EIHa7waHv3LVSpFzQw"/>
+</div>
+<h3 class="font-bold text-sm mb-1">Yogurt Natural</h3>
+<div class="flex items-center justify-between">
+<span class="text-primary font-extrabold">$1.30</span>
+<button class="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Checkout Area -->
+<aside class="w-[400px] flex flex-col glass-panel rounded-2xl overflow-hidden border border-white/40 shadow-2xl">
+<div class="p-6 border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center justify-between mb-2">
+<h2 class="text-xl font-extrabold tracking-tight">Orden Actual</h2>
+<span class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500">ID: #88291</span>
+</div>
+</div>
+<!-- Shopping Cart List -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col gap-4 custom-scrollbar">
+<!-- Cart Item 1 -->
+<div class="flex items-center gap-4 group">
+<div class="size-12 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Coca Cola bottle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUyHEH2Kk7xJxmhCC_PoVWBRl974Zv_o2TsvFqEgbBTTEJMmO36uZpFcTdMOEjjtSDDnNzbSgBVIc_JRAXUIQgE-Ek9-iPP3eLTm2_dJOeKEGD2oqMtXyQZn1rWsOC-8U81j8eTMXRu63qBaGoEs5Gvla7Jib93zNE6LWHv8vu1ywjoXqMLAdb4Cqb0Km_lEB-xIEHQFsuR1R2n-kANUU2DqFahRlnTARSV8PC9lFWvolFGpOoPtw_P9h9WB9spohe7JzdUxL7-qGo"/>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold">Coca Cola 500ml</h4>
+<div class="flex items-center gap-2 mt-1">
+<button class="size-5 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">-</button>
+<span class="text-xs font-bold w-4 text-center">2</span>
+<button class="size-5 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">+</button>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">$3.00</p>
+<button class="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+</div>
+<!-- Cart Item 2 -->
+<div class="flex items-center gap-4 group">
+<div class="size-12 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Potato chips bag" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkEalXNyyHGypII-FnLd8K3Y8ExP-qdtc185dcnIPYNimQdNG8eI7Y81LgB6zpmWMBgyMEt6u6jY3kbKvrwfSmdqh1Rs9pjHvnUK7SZlUprj5PIWrSEMWIpi502J6njIo8aMVVVvmsJEcx-3ZDqWK3Rx65cGlhgX_WuyBzH1-bE9OIlTOuUxAPdSUQr4O8rSED3ivXHVVjYuVuzuZ0kHFSjDbw0_ZJejlleO-PhL2tVHSX2Wi55RRw2U7jSrb3WDRbPhllUvkNTgJ8"/>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold">Papas Lays 50g</h4>
+<div class="flex items-center gap-2 mt-1">
+<button class="size-5 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">-</button>
+<span class="text-xs font-bold w-4 text-center">1</span>
+<button class="size-5 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">+</button>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">$0.80</p>
+<button class="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Totals and Actions -->
+<div class="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+<div class="space-y-3 mb-6">
+<div class="flex justify-between text-sm">
+<span class="text-slate-500 font-medium">Subtotal</span>
+<span class="font-bold">$3.80</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-slate-500 font-medium">IVA (16%)</span>
+<span class="font-bold">$0.61</span>
+</div>
+<div class="pt-3 border-t border-dashed border-slate-300 dark:border-slate-700">
+<div class="flex justify-between items-end">
+<span class="text-lg font-bold">Total</span>
+<div class="text-right">
+<p class="text-3xl font-black text-primary">$4.41</p>
+<p class="text-sm font-bold text-slate-500 italic">~ 158,76 BS</p>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 gap-3">
+<button class="w-full py-5 rounded-2xl bg-accent-green text-slate-900 font-black text-xl flex items-center justify-center gap-3 transition-all hover:scale-[1.02] neon-glow active:scale-95">
+<span class="material-symbols-outlined text-3xl">payments</span>
+                            PAGAR
+                        </button>
+<button class="w-full py-4 rounded-2xl glass-panel text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-red-50 hover:text-red-500 transition-all border-none">
+                            CANCELAR
+                        </button>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer Shortcuts -->
+<footer class="px-8 py-3 glass-panel mx-6 mb-4 rounded-xl flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+<div class="flex gap-6">
+<span class="flex items-center gap-1"><span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1">F1</span> BUSCAR</span>
+<span class="flex items-center gap-1"><span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1">F2</span> CANTIDAD</span>
+<span class="flex items-center gap-1"><span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1">F5</span> AYUDA</span>
+<span class="flex items-center gap-1"><span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded mr-1">F12</span> CERRAR</span>
+</div>
+<div>
+                TERMINAL ID: POS-2026-004
+            </div>
+</footer>
+</div>
+</body></html>

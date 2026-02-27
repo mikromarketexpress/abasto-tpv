@@ -7,8 +7,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        'neon-green': '#25f459',
-        'cobalt-deep': '#050b1f',
+        's-bg': '#080d18',
+        's-neon': '#00e676',
+        's-glass': 'rgba(255, 255, 255, 0.05)',
+      },
+      borderRadius: {
+        's-standard': '10px',
+      },
+      backdropBlur: {
+        xs: '2px',
       }
     },
   },

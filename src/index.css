@@ -1,10 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ============================================================
-   STITCH DESIGN SYSTEM — Mikro Market Express
-   Source: Stitch Project 14085716908063516629
-   Theme: Dark Mode | Font: Manrope | Roundness: 12px
-   Colors: #1152d4 (blue accent) | #00e676 (green action)
+   STITCH DESIGN SYSTEM — Mikro Market Express (REDISEÑO UNIFICADO)
+   Rules: 10px Radius, 8px Grid, Crystalline & Neon Aesthetics
    ============================================================ */
 
 /* --- Reset & Base ------------------------------------------ */
@@ -17,15 +15,6 @@
 }
 
 html {
-  /*
-   * Fluid base font for 14" laptop (1366×768):
-   *   min: 11px at very small viewports
-   *   preferred: 0.85vw → 11.6px at 1366px, 16.3px at 1920px
-   *   max: 14px — caps here to stay compact on 14"
-   *
-   * All rem-based tokens (--sp-*, --fs-*, --r-*) scale proportionally.
-   * No need to touch component CSS — just this one value.
-   */
   font-size: clamp(11px, 0.85vw, 14px);
 }
 
@@ -33,12 +22,10 @@ body {
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #080d18;
   color: #e8eaf6;
-  /* dvh tracks real viewport on mobile, avoids browser-chrome overflow on 14" */
   height: 100dvh;
   width: 100%;
   max-width: 100vw;
   overflow: clip;
-  /* clip is safer than hidden — doesn't create scroll ctx */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -51,45 +38,31 @@ body {
 
 /* --- Design Tokens ----------------------------------------- */
 :root {
-  /* Stitch colors */
-  --stitch-bg: #080d18;
-  --stitch-surface-1: rgba(255, 255, 255, 0.04);
-  --stitch-surface-2: rgba(255, 255, 255, 0.07);
-  --stitch-surface-3: rgba(255, 255, 255, 0.10);
-  --stitch-border: rgba(255, 255, 255, 0.08);
-  --stitch-border-2: rgba(255, 255, 255, 0.13);
+  /* Colors */
+  --s-bg: #080d18;
+  --s-neon: #00e676;
+  --s-neon-glow: rgba(0, 230, 118, 0.4);
+  --s-glass-bg: rgba(255, 255, 255, 0.05);
+  --s-glass-border: rgba(255, 255, 255, 0.1);
+  --s-text-primary: #f0f4ff;
+  --s-text-secondary: rgba(224, 231, 255, 0.6);
+  --s-text-dim: rgba(224, 231, 255, 0.25);
 
-  /* Stitch custom color */
-  --stitch-blue: #1152d4;
-  --stitch-blue-soft: rgba(17, 82, 212, 0.2);
-  --stitch-green: #00e676;
-  --stitch-green-soft: rgba(0, 230, 118, 0.15);
-  --stitch-green-dark: #00c853;
-  --stitch-red: #ff5252;
-  --stitch-red-soft: rgba(255, 82, 82, 0.15);
-  --stitch-amber: #ffd740;
+  /* Symmetry & Spacing (8px grid) */
+  --gap-1: 0.5rem;
+  /* 8px approx */
+  --gap-2: 1rem;
+  /* 16px approx */
+  --gap-3: 1.5rem;
+  /* 24px approx */
+  --gap-4: 2rem;
+  /* 32px approx */
 
-  /* Stitch text */
-  --stitch-text-1: #f0f4ff;
-  --stitch-text-2: rgba(224, 231, 255, 0.6);
-  --stitch-text-3: rgba(224, 231, 255, 0.25);
-  --stitch-text-4: rgba(224, 231, 255, 0.10);
+  /* Radius */
+  --r-standard: 10px;
+  --r-full: 999px;
 
-  /* Stitch roundness: ROUND_TWELVE → 12px base, scale up for panels */
-  --r-sm: 0.5rem;
-  /* 8px buttons, badges */
-  --r-base: 0.75rem;
-  /* 12px Stitch base */
-  --r-md: 1rem;
-  /* 16px cards */
-  --r-lg: 1.25rem;
-  /* 20px panels */
-  --r-xl: 1.5rem;
-  /* 24px main panels */
-  --r-full: 9999px;
-  /* Pills */
-
-  /* Stitch spacing (fluid rem) */
+  /* Additional Tokens */
   --sp-1: 0.25rem;
   --sp-2: 0.5rem;
   --sp-3: 0.75rem;
@@ -97,341 +70,54 @@ body {
   --sp-5: 1.25rem;
   --sp-6: 1.5rem;
   --sp-8: 2rem;
-  --sp-10: 2.5rem;
-  --sp-12: 3rem;
 
-  /* Stitch font sizes (fluid rem via html clamp) */
-  --fs-xs: 0.625rem;
+  --fs-xs: 0.65rem;
   --fs-sm: 0.75rem;
-  --fs-base: 0.875rem;
+  --fs-base: 0.9rem;
   --fs-md: 1rem;
-  --fs-lg: 1.125rem;
-  --fs-xl: 1.375rem;
-  --fs-2xl: 1.75rem;
-  --fs-3xl: 2.25rem;
-  --fs-4xl: 3rem;
+  --fs-lg: 1.15rem;
+  --fs-xl: 1.4rem;
+  --fs-2xl: 1.8rem;
 
-  /* Layout — fluid with rem so panels shrink on 14" */
-  --sidebar-w: 15rem;
-  /* was 17rem; trimmed for 14" */
-  --header-h: 3.75rem;
-  /* was 4.25rem */
+  /* Layout */
+  --sidebar-w: 16rem;
+  --header-h: 4rem;
 }
 
-/* --- Stitch Glass Surfaces ---------------------------------- */
-.s-panel {
-  background: var(--stitch-surface-1);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-xl);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+/* --- Ambient Light Effects ---------------------------------- */
+.s-ambient-blue,
+.s-ambient-green {
+  position: absolute;
+  width: 40vw;
+  height: 40vw;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.15;
 }
 
-.s-card {
-  background: var(--stitch-surface-1);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-md);
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+.s-ambient-blue {
+  background: #1152d4;
+  top: -10%;
+  left: -10%;
 }
 
-.s-card:hover {
-  background: var(--stitch-surface-2);
-  border-color: var(--stitch-border-2);
-  transform: translateY(-2px);
+.s-ambient-green {
+  background: var(--s-neon);
+  bottom: -10%;
+  right: -10%;
 }
 
-.s-input {
-  background: var(--stitch-surface-2);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-base);
-  color: var(--stitch-text-1);
-  padding: var(--sp-3) var(--sp-4);
-  font-family: inherit;
-  font-size: var(--fs-base);
-  font-weight: 600;
-  outline: none;
-  width: 100%;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.s-input:focus {
-  border-color: var(--stitch-blue);
-  background: var(--stitch-surface-3);
-}
-
-.s-input::placeholder {
-  color: var(--stitch-text-3);
-  font-weight: 500;
-}
-
-/* --- Stitch Buttons ---------------------------------------- */
-.s-btn-pay {
-  background: var(--stitch-green);
-  color: #000;
-  border: none;
-  border-radius: var(--r-lg);
-  font-family: inherit;
-  font-size: var(--fs-md);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: var(--sp-4) var(--sp-6);
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-3);
-  box-shadow: 0 0 24px rgba(0, 230, 118, 0.35);
-  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-}
-
-.s-btn-pay:hover {
-  opacity: 0.9;
-  box-shadow: 0 0 40px rgba(0, 230, 118, 0.5);
-}
-
-.s-btn-pay:active {
-  transform: scale(0.98);
-}
-
-.s-btn-pay:disabled {
-  opacity: 0.2;
-  box-shadow: none;
-  filter: grayscale(1);
-  cursor: not-allowed;
-}
-
-.s-btn-add {
-  background: var(--stitch-green);
-  color: #000;
-  border: none;
-  border-radius: var(--r-full);
-  font-family: inherit;
-  font-size: var(--fs-sm);
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: var(--sp-2) var(--sp-4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  transition: opacity 0.2s, transform 0.15s;
-}
-
-.s-btn-add:hover {
-  opacity: 0.85;
-}
-
-.s-btn-add:active {
-  transform: scale(0.96);
-}
-
-.s-btn-ghost {
-  background: transparent;
-  border: 1px solid var(--stitch-border-2);
-  border-radius: var(--r-base);
-  color: var(--stitch-text-2);
-  font-family: inherit;
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  cursor: pointer;
-  padding: var(--sp-2) var(--sp-4);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  transition: background 0.2s, color 0.2s;
-}
-
-.s-btn-ghost:hover {
-  background: var(--stitch-surface-2);
-  color: var(--stitch-text-1);
-}
-
-.s-btn-icon {
-  background: var(--stitch-surface-2);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-base);
-  color: var(--stitch-text-2);
-  cursor: pointer;
-  width: 2.25rem;
-  height: 2.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.2s, color 0.2s;
-}
-
-.s-btn-icon:hover {
-  background: var(--stitch-surface-3);
-  color: var(--stitch-text-1);
-}
-
-/* --- Stitch Nav Item --------------------------------------- */
-.s-nav-item {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-base);
-  color: var(--stitch-text-2);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-  transition: background 0.15s, color 0.15s;
-}
-
-.s-nav-item:hover {
-  background: var(--stitch-surface-2);
-  color: var(--stitch-text-1);
-}
-
-.s-nav-item.active {
-  background: var(--stitch-blue);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(17, 82, 212, 0.35);
-}
-
-.s-nav-item.active-green {
-  background: var(--stitch-green-soft);
-  color: var(--stitch-green);
-  border: 1px solid rgba(0, 230, 118, 0.25);
-}
-
-/* --- Stitch Category Pill ---------------------------------- */
-.s-cat-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-base);
-  color: var(--stitch-text-3);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-  transition: background 0.15s, color 0.15s;
-}
-
-.s-cat-btn:hover {
-  background: var(--stitch-surface-2);
-  color: var(--stitch-text-2);
-}
-
-.s-cat-btn.active {
-  background: var(--stitch-blue);
-  color: #fff;
-  border-radius: var(--r-full);
-  box-shadow: 0 4px 16px rgba(17, 82, 212, 0.3);
-}
-
-/* --- Stitch Badge ------------------------------------------ */
-.s-badge {
-  font-size: var(--fs-xs);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.2em 0.6em;
-  border-radius: var(--r-full);
-}
-
-.s-badge-blue {
-  background: var(--stitch-blue-soft);
-  color: #82a9f7;
-  border: 1px solid rgba(130, 169, 247, 0.2);
-}
-
-.s-badge-green {
-  background: var(--stitch-green-soft);
-  color: var(--stitch-green);
-  border: 1px solid rgba(0, 230, 118, 0.2);
-}
-
-.s-badge-red {
-  background: var(--stitch-red-soft);
-  color: var(--stitch-red);
-  border: 1px solid rgba(255, 82, 82, 0.2);
-}
-
-.s-badge-dim {
-  background: var(--stitch-surface-2);
-  color: var(--stitch-text-2);
-  border: 1px solid var(--stitch-border);
-}
-
-/* --- Stitch Typography ------------------------------------- */
-.s-label {
-  font-size: var(--fs-xs);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--stitch-text-3);
-}
-
-.s-title {
-  font-size: var(--fs-xl);
-  font-weight: 800;
-  color: var(--stitch-text-1);
-}
-
-.s-caption {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--stitch-text-3);
-}
-
-/* --- Stitch Stock Bar ------------------------------------- */
-.s-stock-bar {
-  height: 4px;
-  border-radius: var(--r-full);
-  background: var(--stitch-surface-3);
-  overflow: hidden;
-}
-
-.s-stock-bar__fill {
-  height: 100%;
-  border-radius: var(--r-full);
-  transition: width 1s ease;
-}
-
-.s-stock-bar__fill.good {
-  background: var(--stitch-green);
-  box-shadow: 0 0 8px rgba(0, 230, 118, 0.5);
-}
-
-.s-stock-bar__fill.warn {
-  background: var(--stitch-amber);
-  box-shadow: 0 0 8px rgba(255, 215, 64, 0.5);
-}
-
-.s-stock-bar__fill.bad {
-  background: var(--stitch-red);
-  box-shadow: 0 0 8px rgba(255, 82, 82, 0.5);
-}
-
-/* --- Stitch Scrollbar ------------------------------------- */
+/* --- Global Utilities --------------------------------------- */
 .s-scroll {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  scrollbar-color: rgba(0, 230, 118, 0.1) transparent;
 }
 
 .s-scroll::-webkit-scrollbar {
   width: 4px;
-}
-
-.s-scroll::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 .s-scroll::-webkit-scrollbar-thumb {
@@ -439,211 +125,315 @@ body {
   border-radius: 4px;
 }
 
-.s-no-scroll {
+.s-scroll-x {
+  display: flex;
+  overflow-x: auto;
   scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
 }
 
-.s-no-scroll::-webkit-scrollbar {
+.s-scroll-x::-webkit-scrollbar {
   display: none;
 }
 
-/* --- Stitch Divider --------------------------------------- */
-.s-divider {
-  height: 1px;
-  background: var(--stitch-border);
-  margin: var(--sp-2) 0;
+/* --- Unified Inputs (Glass Inputs) -------------------------- */
+.s-input,
+.s-select,
+textarea.s-input {
+  background: var(--s-glass-bg);
+  border: 1px solid var(--s-glass-border);
+  border-radius: var(--r-standard);
+  color: var(--s-text-primary);
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  outline: none;
+  width: 100%;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- Stitch Ambient Effects ------------------------------- */
-.s-ambient-blue {
+.s-input:focus,
+.s-select:focus {
+  border-color: var(--s-neon);
+  box-shadow: 0 0 15px var(--s-neon-glow);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.s-input:hover,
+.s-select:hover {
+  border-color: var(--s-neon);
+  box-shadow: 0 0 12px #00ff88;
+}
+
+.s-input::placeholder,
+textarea.s-input::placeholder {
+  color: var(--s-text-dim);
+  opacity: 1;
+}
+
+.s-input--error {
+  border-color: #ff3131 !important;
+  box-shadow: 0 0 12px rgba(255, 49, 49, 0.4) !important;
+}
+
+.s-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300e676' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2rem;
+}
+
+.s-select option {
+  background-color: #0d121c;
+  color: var(--s-neon);
+  font-weight: 800;
+  padding: 10px;
+}
+
+/* --- Custom Modern Dropdown (Neon Style) --------------------- */
+.s-custom-select {
+  position: relative;
+  user-select: none;
+}
+
+.s-custom-select__trigger {
+  height: 3.8rem;
+  padding: 0 1.5rem 0 3.2rem;
+  background: var(--s-glass-bg);
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  border-radius: var(--r-standard);
+  color: var(--s-neon);
+  font-weight: 1000;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+.s-custom-select__trigger:hover {
+  background: rgba(0, 230, 118, 0.05);
+  border-color: var(--s-neon);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.1);
+}
+
+.s-custom-select__options {
   position: absolute;
-  width: 40vw;
-  height: 40vw;
-  background: radial-gradient(circle, rgba(17, 82, 212, 0.12) 0%, transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: rgba(13, 18, 28, 0.95);
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.s-ambient-green {
-  position: absolute;
-  width: 30vw;
-  height: 30vw;
-  background: radial-gradient(circle, rgba(0, 230, 118, 0.08) 0%, transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
+.s-custom-select__option {
+  padding: 0.8rem 1rem;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-/* --- Stitch Layout Utilities ------------------------------ */
+.s-custom-select__option:hover {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--s-neon);
+  text-shadow: 0 0 8px var(--s-neon-glow);
+  padding-left: 1.5rem;
+}
+
+.s-custom-select__option.active {
+  background: var(--s-neon);
+  color: #000;
+  text-shadow: none;
+}
+
+/* --- Unified Buttons ---------------------------------------- */
+.s-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--r-standard);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.s-btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.s-btn:active {
+  transform: scale(0.98);
+}
+
+/* Active / Primary Button */
+.s-btn-primary {
+  background: var(--s-neon);
+  color: #000;
+  box-shadow: 0 4px 15px var(--s-neon-glow);
+}
+
+.s-btn-primary:hover {
+  box-shadow: 0 8px 25px var(--s-neon-glow);
+  background: #00ff82;
+}
+
+/* Inactive / Secondary / Glass Button */
+.s-btn-secondary {
+  background: var(--s-glass-bg);
+  border: 1px solid var(--s-glass-border);
+  color: var(--s-text-primary);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.s-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Panels & Cards --------------------------------------- */
+.s-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--s-glass-border);
+  border-radius: var(--r-standard);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* --- Specific Components Layout --------------------------- */
 .s-layout {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  /* dvh = real viewport, no browser-chrome bleed on 14" */
-  width: 100%;
-  padding: 0.75rem;
-  gap: 0.75rem;
-  overflow: clip;
+  padding: var(--gap-1);
+  gap: var(--gap-1);
 }
 
 .s-layout__body {
   display: flex;
   flex: 1;
-  gap: 0.75rem;
+  gap: var(--gap-1);
   overflow: hidden;
-  min-height: 0;
-}
-
-.s-layout__sidebar {
-  width: var(--sidebar-w);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 
 .s-layout__main {
   flex: 1;
   overflow: hidden;
+  padding: 0;
   min-width: 0;
 }
 
-/* --- Stitch Header ---------------------------------------- */
-.s-header {
+.s-footer {
+  height: 3.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--sp-6);
-  height: var(--header-h);
-  background: var(--stitch-surface-1);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-xl);
+  padding: 0 1.5rem;
+  border: 1px solid var(--s-glass-border);
+  border-radius: var(--r-standard);
+  background: rgba(13, 18, 32, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 
-/* --- Stitch Product Card ---------------------------------- */
-.s-product-card {
-  background: var(--stitch-surface-1);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-md);
-  padding: var(--sp-3);
+.s-header {
+  height: 5rem;
   display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  background: rgba(13, 18, 32, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--s-glass-border);
+  border-radius: var(--r-standard);
+  flex-shrink: 0;
 }
 
-.s-product-card:hover {
-  background: var(--stitch-surface-2);
-  border-color: var(--stitch-border-2);
-  transform: translateY(-2px);
+/* --- Table Styles ----------------------------------------- */
+.s-table-header {
+  display: grid;
+  padding: 1rem 1.5rem;
+  background: var(--s-glass-bg);
+  border-radius: var(--r-standard);
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--s-text-dim);
 }
 
-.s-product-card__img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: var(--r-sm);
-  background: var(--stitch-surface-2);
-  overflow: hidden;
+.s-table-row {
+  display: grid;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+  align-items: center;
+}
+
+.s-table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* --- Drawer & Overlays ------------------------------------- */
+.s-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--sp-3);
-  position: relative;
+  padding: 2rem;
 }
 
-.s-product-card__img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.s-product-card__name {
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--stitch-text-1);
-  line-height: 1.3;
-  margin-bottom: var(--sp-2);
-  min-height: 2.4em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  /* standard alias — fixes lint */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.s-product-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-}
-
-.s-product-card__price {
-  font-size: var(--fs-md);
-  font-weight: 800;
-  color: var(--stitch-text-1);
-}
-
-/* --- Stitch Cart Item ------------------------------------- */
-.s-cart-item {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) 0;
-  border-bottom: 1px solid var(--stitch-border);
-}
-
-.s-cart-item__thumb {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: var(--r-sm);
-  background: var(--stitch-surface-2);
-  border: 1px solid var(--stitch-border);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.s-cart-item__qty {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  background: var(--stitch-surface-2);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-sm);
-  padding: var(--sp-1) var(--sp-3);
-}
-
-/* --- Stitch Inventory Row --------------------------------- */
-.s-inv-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr auto 3rem;
-  align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-4) var(--sp-6);
-  border-bottom: 1px solid var(--stitch-border);
-  transition: background 0.15s;
-}
-
-.s-inv-row:hover {
-  background: var(--stitch-surface-1);
-}
-
-.s-inv-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr auto 3rem;
-  align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-3) var(--sp-6);
-  border-bottom: 1px solid var(--stitch-border);
-  background: var(--stitch-surface-2);
-}
-
-/* --- Stitch Drawer ---------------------------------------- */
-.s-drawer {
+.s-overlay__backdrop {
   position: absolute;
   inset: 0;
-  z-index: 50;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.s-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   display: flex;
   justify-content: flex-end;
 }
@@ -651,87 +441,94 @@ body {
 .s-drawer__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .s-drawer__panel {
   position: relative;
-  width: min(36rem, 45vw);
   height: 100%;
-  background: #0d1220;
-  border-left: 1px solid var(--stitch-border);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  background: rgba(13, 18, 32, 0.95);
+  border-left: 1px solid var(--s-glass-border);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.s-modal {
+  position: relative;
+  width: 100%;
+  max-width: 32rem;
+  background: rgba(13, 18, 32, 0.98);
+  border: 1px solid var(--s-glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
-/* --- Stitch On/Off Status --------------------------------- */
-.s-status-online {
+.s-modal__header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--s-glass-border);
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--sp-2);
-  background: rgba(0, 230, 118, 0.1);
-  border: 1px solid rgba(0, 230, 118, 0.2);
-  border-radius: var(--r-full);
-  padding: var(--sp-1) var(--sp-3);
-  font-size: var(--fs-xs);
+}
+
+.s-modal__body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.s-modal__footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--s-glass-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* --- Badge --------------------------------------------------- */
+.s-badge {
+  font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  padding: 0.3rem 0.6rem;
+  border-radius: 99px;
   text-transform: uppercase;
-  color: var(--stitch-green);
 }
 
-.s-status-online__dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--stitch-green);
-  animation: pulse-green 2s infinite;
+.s-badge-dim {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--s-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* --- Stitch Quantity Controls ----------------------------- */
-.s-qty-btn {
-  background: var(--stitch-surface-2);
-  border: 1px solid var(--stitch-border);
-  border-radius: var(--r-sm);
-  color: var(--stitch-text-2);
-  cursor: pointer;
-  width: 1.75rem;
-  height: 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: var(--fs-base);
-  line-height: 1;
-  transition: background 0.15s, color 0.15s;
-  flex-shrink: 0;
+.s-badge-neon {
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--s-neon);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  text-shadow: 0 0 10px var(--s-neon-glow);
+  box-shadow: inset 0 0 10px rgba(0, 230, 118, 0.05);
 }
 
-.s-qty-btn:hover {
-  background: var(--stitch-surface-3);
-  color: var(--stitch-text-1);
+/* Custom Scrollbar for Select Dropdowns */
+select option {
+  background: #111;
+  color: #fff;
+  padding: 10px;
 }
 
-/* --- Animations ------------------------------------------- */
-@keyframes pulse-green {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.4);
-  }
-
-  50% {
-    box-shadow: 0 0 0 4px rgba(0, 230, 118, 0);
-  }
-}
-
-@keyframes fadeUp {
+/* Animations */
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(5px);
   }
 
   to {
@@ -740,22 +537,436 @@ body {
   }
 }
 
+.animate-fade {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Legacy / Compat Classes */
+.s-btn-pay {
+  width: 100%;
+}
+
+.s-btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+.s-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  border-top-color: var(--s-neon);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.s-animate-in {
-  animation: fadeUp 0.25s ease forwards;
+/* --- Chips --------------------------------------------------- */
+.s-chip {
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--r-full);
+  background: var(--s-glass-bg);
+  border: 1px solid var(--s-glass-border);
+  color: var(--s-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* --- Loader ------------------------------------------------ */
-.s-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--stitch-surface-3);
-  border-top-color: var(--stitch-blue);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+.s-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.s-chip.active {
+  background: var(--s-neon);
+  color: #000;
+  border-color: var(--s-neon);
+  box-shadow: 0 0 15px var(--s-neon-glow);
+}
+
+/* --- Inventory Grid ------------------------------------------ */
+.s-grid-inventory {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--gap-3);
+  padding: 0.5rem;
+}
+
+.s-product-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--s-glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.s-product-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--s-neon);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 230, 118, 0.15);
+}
+
+.s-product-card__img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.s-product-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.s-product-card:hover .s-product-card__img img {
+  transform: scale(1.1);
+}
+
+.s-product-card__stock {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--s-neon);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 1000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.s-product-card__info {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.5rem;
+}
+
+.s-product-card__info h3 {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.s-product-card__price {
+  font-size: 1.5rem;
+  font-weight: 1000;
+  color: var(--s-neon);
+  text-shadow: 0 0 10px var(--s-neon-glow);
+}
+
+/* --- Crystal Modal & Forms ----------------------------------- */
+.s-modal--crystal {
+  background: rgba(13, 18, 28, 0.85);
+  backdrop-filter: blur(30px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.s-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.s-field label {
+  font-size: 0.6rem;
+  font-weight: 1000;
+  color: var(--s-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.s-input--neon {
+  color: var(--s-neon) !important;
+  font-size: 1.2rem !important;
+  font-weight: 900 !important;
+}
+
+.s-counter {
+  display: flex;
+  background: var(--s-glass-bg);
+  border: 1px solid var(--s-glass-border);
+  border-radius: var(--r-standard);
+  height: 4.5rem;
+  overflow: hidden;
+}
+
+.s-counter button {
+  width: 4rem;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.s-counter button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.s-counter input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 1000;
+  outline: none;
+}
+
+.s-modal__img-preview {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--s-glass-border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.s-modal__img-preview:hover {
+  border-color: var(--s-neon);
+  box-shadow: 0 0 12px #00ff88;
+}
+
+/* --- Navigation & Sidebar --------------------------------- */
+.s-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  width: 100%;
+  border-radius: var(--r-standard);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--s-neon);
+  text-shadow: 0 0 8px rgba(0, 230, 118, 0.2);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.s-nav-btn:hover {
+  background: rgba(0, 230, 118, 0.05);
+  border-color: rgba(0, 230, 118, 0.2);
+  color: #fff;
+  text-shadow: 0 0 12px var(--s-neon-glow);
+}
+
+.s-nav-btn.active {
+  background: var(--s-neon);
+  color: #000;
+  box-shadow: 0 4px 15px var(--s-neon-glow);
+}
+
+.s-nav-btn.active svg {
+  color: #000 !important;
+}
+
+.s-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  width: 100%;
+  border-radius: var(--r-standard);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--s-text-dim);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.4rem;
+}
+
+.s-cat-btn:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--s-text-secondary);
+}
+
+.s-cat-btn.active {
+  border-color: var(--s-neon);
+  color: var(--s-neon);
+  background: rgba(0, 230, 118, 0.05);
+}
+
+/* --- Misc ---------------------------------------------------- */
+.s-divider {
+  height: 1px;
+  background: var(--s-glass-border);
+  margin: 1rem 0;
+}
+
+.s-section-label {
+  font-size: 0.65rem;
+  font-weight: 1000;
+  color: var(--s-neon);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 0 1rem;
+  margin-bottom: 0.75rem;
+  display: block;
+  text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+/* --- Liquid List View (Inventario Premium) ------------------- */
+.s-liquid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem;
+}
+
+.s-liquid-row {
+  display: grid;
+  grid-template-columns: 3.5rem 2fr 1fr 1.5fr 1fr 4rem;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--s-glass-border);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.s-liquid-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--s-neon);
+  transform: translateX(10px);
+  box-shadow: -10px 0 20px rgba(0, 230, 118, 0.1), 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.s-liquid-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--s-neon);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.s-liquid-row:hover::before {
+  opacity: 1;
+}
+
+.s-liquid-row__img {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.s-liquid-row__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.s-liquid-row h4 {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.s-liquid-row p {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--s-text-dim);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.s-liquid-row__stock-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0 1rem;
+}
+
+.s-liquid-row__bar-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.s-liquid-row__bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.s-liquid-row__price {
+  font-size: 1.25rem;
+  font-weight: 1000;
+  color: var(--s-neon);
+  text-align: right;
+  text-shadow: 0 0 15px var(--s-neon-glow);
+}
+
+.s-liquid-header {
+  display: grid;
+  grid-template-columns: 3.5rem 2fr 1fr 1.5fr 1fr 4rem;
+  padding: 0 1.5rem 0.5rem 2.5rem;
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--s-neon);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 }

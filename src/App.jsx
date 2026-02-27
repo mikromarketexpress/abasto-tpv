@@ -7,6 +7,7 @@ import Inventory from './pages/Inventory'
 import HelpModal from './components/HelpModal'
 import { supabase } from './lib/supabase'
 import { getOfflineSales, deleteOfflineSale } from './lib/db'
+import { useToast } from './context/ToastContext'
 
 function App() {
     const [activePage, setActivePage] = useState('pos')
@@ -20,9 +21,8 @@ function App() {
         window.addEventListener('offline', down)
 
         const handleKey = (e) => {
-            if (e.key === 'F1') { e.preventDefault(); window.dispatchEvent(new CustomEvent('focus-search')) }
-            if (e.key === 'F5') { e.preventDefault(); setShowHelp(p => !p) }
-            if (e.key === 'Escape') setShowHelp(false)
+            if (e.key === 'F1') { e.preventDefault(); setShowHelp(p => !p) }
+            if (e.key === 'F5') { e.preventDefault(); window.location.reload() }
         }
         window.addEventListener('keydown', handleKey)
         return () => {
@@ -32,11 +32,15 @@ function App() {
         }
     }, [])
 
-    // Sync offline sales when back online
+    const { showToast } = useToast()
+
     useEffect(() => {
         if (!isOnline) return
         const sync = async () => {
             const sales = await getOfflineSales()
+            if (sales.length === 0) return
+
+            let syncedCount = 0
             for (const sale of sales) {
                 try {
                     const { error } = await supabase.rpc('finalizar_venta_v2', {
@@ -45,23 +49,28 @@ function App() {
                         p_productos: sale.productos,
                         p_pagos: sale.pagos
                     })
-                    if (!error) await deleteOfflineSale(sale.id)
+                    if (!error) {
+                        await deleteOfflineSale(sale.id)
+                        syncedCount++
+                    }
                 } catch (err) { console.error('Sync error:', err) }
+            }
+            if (syncedCount > 0) {
+                showToast(`${syncedCount} VENTAS SINCRONIZADAS CON LA NUBE`, 'info')
             }
         }
         sync()
     }, [isOnline])
 
     return (
-        <div className="s-layout" style={{ position: 'relative', overflow: 'hidden' }}>
-            {/* Ambient light effects — exact Stitch design */}
-            <div className="s-ambient-blue" style={{ top: '-20%', left: '-10%' }} />
-            <div className="s-ambient-green" style={{ bottom: '-15%', right: '-10%' }} />
+        <div className="s-layout">
+            <div className="s-ambient-blue" />
+            <div className="s-ambient-green" />
 
-            {/* Header */}
+            {/* Header Area */}
             <Header isOnline={isOnline} />
 
-            {/* Body */}
+            {/* Content Area */}
             <div className="s-layout__body">
                 <Sidebar activePage={activePage} setActivePage={setActivePage} />
                 <main className="s-layout__main">
@@ -71,29 +80,26 @@ function App() {
                 </main>
             </div>
 
-            {/* Footer shortcut bar */}
-            <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '0 1rem', height: '2rem', flexShrink: 0
-            }}>
+            {/* Footer Status Bar */}
+            <footer className="s-footer">
                 <div style={{ display: 'flex', gap: '1.5rem' }}>
-                    {[['F1', 'BUSCAR'], ['F2', 'CANTIDAD'], ['F5', 'AYUDA'], ['ESC', 'SALIR']].map(([key, label]) => (
-                        <span key={key} className="s-caption" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{
-                                background: 'rgba(255,255,255,0.06)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '0.375rem',
-                                padding: '0.1rem 0.4rem',
-                                fontWeight: 800, color: 'rgba(224,231,255,0.3)', fontSize: '0.625rem'
-                            }}>{key}</span>
-                            {label}
-                        </span>
+                    {[
+                        ['F1', 'AYUDA'],
+                        ['F5', 'REFRESCAR'],
+                        ['ESC', 'CERRAR']
+                    ].map(([key, label]) => (
+                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 1000, background: 'rgba(0,230,118,0.1)', color: 'var(--s-neon)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(0,230,118,0.2)' }}>{key}</span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#fff', letterSpacing: '0.1em' }}>{label}</span>
+                        </div>
                     ))}
                 </div>
-                <span className="s-caption" style={{ letterSpacing: '0.3em' }}>POS-MK-2026-X4</span>
-            </div>
+                <div style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fff', letterSpacing: '0.2em' }}>
+                    MICRO MARKET <span style={{ color: 'var(--s-neon)' }}>EXPRESS</span> — <span style={{ color: 'var(--s-text-primary)' }}>v2.5.0</span>
+                </div>
+            </footer>
 
-            {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+            {showHelp && <HelpModal onClose={() => setShowHelp(false)} activePage={activePage} />}
         </div>
     )
 }

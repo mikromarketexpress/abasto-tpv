@@ -3,13 +3,13 @@ import { ShoppingCart, BarChart3, Layers, Settings, Coffee, Pizza, Apple, Milk, 
 import { supabase } from '../lib/supabase'
 
 const NAV = [
-    { id: 'pos', label: 'TPV', Icon: ShoppingCart },
-    { id: 'dashboard', label: 'Estadísticas', Icon: BarChart3 },
-    { id: 'inventory', label: 'Inventario', Icon: Layers },
+    { id: 'pos', label: 'TERMINAL DE VENTA', Icon: ShoppingCart },
+    { id: 'dashboard', label: 'ESTADÍSTICAS', Icon: BarChart3 },
+    { id: 'inventory', label: 'INVENTARIO', Icon: Layers },
 ]
 
-const getIcon = (name = '') => {
-    const n = name.toLowerCase()
+const getCatIcon = (name = '') => {
+    const n = (name || '').toLowerCase()
     if (n.includes('bebida')) return <Coffee size={16} />
     if (n.includes('snack')) return <Pizza size={16} />
     if (n.includes('fruta')) return <Apple size={16} />
@@ -35,48 +35,51 @@ const Sidebar = ({ activePage, setActivePage }) => {
     }
 
     return (
-        <aside className="s-layout__sidebar">
+        <aside style={{ width: 'var(--sidebar-w)', display: 'flex', flexDirection: 'column', gap: 'var(--gap-2)', flexShrink: 0 }}>
             {/* Main nav panel */}
-            <div className="s-panel s-scroll" style={{ flex: 1, padding: 'var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)' }}>
-                <span className="s-label" style={{ padding: '0.25rem var(--sp-3)', marginBottom: 'var(--sp-2)' }}>Menú Principal</span>
+            <div className="s-panel s-scroll" style={{ flex: 1, padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+                <span className="s-section-label">Menú Principal</span>
 
-                {NAV.map(({ id, label, Icon }) => (
-                    <button
-                        key={id}
-                        className={`s-nav-item ${activePage === id ? (id === 'inventory' ? 'active-green' : 'active') : ''}`}
-                        onClick={() => setActivePage(id)}
-                    >
-                        <Icon size={16} />
-                        {label}
-                    </button>
-                ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {NAV.map(({ id, label, Icon }) => (
+                        <button
+                            key={id}
+                            className={`s-nav-btn ${activePage === id ? 'active' : ''}`}
+                            onClick={() => setActivePage(id)}
+                        >
+                            <Icon size={18} style={{ color: activePage === id ? '#000' : 'var(--s-neon)' }} />
+                            {label}
+                        </button>
+                    ))}
+                </div>
 
-                {/* Divider */}
-                <div className="s-divider" style={{ margin: 'var(--sp-3) 0' }} />
+                <div className="s-divider" />
 
-                <span className="s-label" style={{ padding: '0.25rem var(--sp-3)', marginBottom: 'var(--sp-2)' }}>Categorías</span>
+                <span className="s-section-label">Categorías</span>
+                <div className="s-scroll" style={{ flex: 1 }}>
+                    {categories.map(cat => (
+                        <button
+                            key={cat.id}
+                            className={`s-cat-btn ${activeCategory === cat.id ? 'active' : ''}`}
+                            onClick={() => handleCategory(cat.id)}
+                        >
+                            {getCatIcon(cat.nombre)}
+                            {cat.nombre?.toUpperCase() || 'CATEGORÍA'}
+                        </button>
+                    ))}
+                </div>
 
-                {categories.map(cat => (
-                    <button
-                        key={cat.id}
-                        className={`s-cat-btn ${activeCategory === cat.id ? 'active' : ''}`}
-                        onClick={() => handleCategory(cat.id)}
-                    >
-                        {getIcon(cat.nombre)}
-                        {cat.nombre}
-                    </button>
-                ))}
+                <div className="s-divider" />
+
+                <button
+                    className="s-nav-btn"
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggle-help'))}
+                    style={{ marginTop: 'auto' }}
+                >
+                    <HelpCircle size={18} style={{ color: 'var(--s-neon)' }} />
+                    AYUDA (F5)
+                </button>
             </div>
-
-            {/* Help button */}
-            <button
-                className="s-panel s-btn-ghost"
-                style={{ width: '100%', justifyContent: 'center', padding: 'var(--sp-4)', gap: 'var(--sp-3)' }}
-                onClick={() => window.dispatchEvent(new CustomEvent('toggle-help'))}
-            >
-                <HelpCircle size={16} />
-                AYUDA (F5)
-            </button>
         </aside>
     )
 }

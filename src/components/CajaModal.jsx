@@ -88,39 +88,58 @@ const CajaModal = ({ type, onClose, onSessionUpdate, terminalId }) => {
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40">
+        <div className="s-overlay">
+            <motion.div
+                className="s-overlay__backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+            />
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20"
+                className="s-modal"
+                style={{ maxWidth: '28rem' }}
             >
-                <div className="p-8">
-                    <div className="flex justify-between items-start mb-8">
-                        <div className={`p-4 rounded-2xl ${type === 'abrir' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
-                            {type === 'abrir' ? <Unlock size={32} /> : <Lock size={32} />}
+                <div className="s-modal__header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{
+                            width: '3rem', height: '3rem', borderRadius: '12px',
+                            background: type === 'abrir' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 82, 82, 0.1)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: type === 'abrir' ? 'var(--s-neon)' : '#ff5252',
+                            border: `1px solid ${type === 'abrir' ? 'var(--s-neon-glow)' : 'rgba(255,82,82,0.3)'}`
+                        }}>
+                            {type === 'abrir' ? <Unlock size={20} /> : <Lock size={20} />}
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                            <X size={24} className="text-gray-400" />
-                        </button>
+                        <div>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>
+                                {type === 'abrir' ? 'APERTURA DE CAJA' : 'CIERRE DE CAJA'}
+                            </h2>
+                            <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--s-text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                MME-POS-TERMINAL
+                            </p>
+                        </div>
                     </div>
+                    <button onClick={onClose} className="s-btn s-btn-secondary s-btn-icon" style={{ border: 'none' }}>
+                        <X size={20} />
+                    </button>
+                </div>
 
-                    <h2 className="text-3xl font-black text-gray-800 mb-2">
-                        {type === 'abrir' ? 'Apertura de Caja' : 'Cierre de Caja'}
-                    </h2>
-                    <p className="text-gray-400 font-medium mb-8">
+                <div className="s-modal__body">
+                    <p style={{ fontSize: '0.8rem', color: 'var(--s-text-secondary)', lineHeight: '1.6', textAlign: 'center' }}>
                         {type === 'abrir'
-                            ? 'Ingrese el monto inicial de efectivo en caja para comenzar la jornada.'
-                            : 'Ingrese el monto final de efectivo en caja para cerrar la jornada.'}
+                            ? 'Ingrese el monto inicial de efectivo en caja para comenzar la sesión de ventas.'
+                            : 'Ingrese el monto final de efectivo detectado en caja para finalizar la jornada.'}
                     </p>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[2px] text-gray-400 px-2">
-                                Monto en Efectivo (USD)
-                            </label>
-                            <div className="relative">
-                                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <DollarSign size={24} />
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                            <label className="s-section-label" style={{ padding: 0 }}>Monto en Efectivo (USD)</label>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--s-neon)', fontWeight: 900, fontSize: '1.5rem' }}>
+                                    $
                                 </div>
                                 <input
                                     autoFocus
@@ -129,28 +148,27 @@ const CajaModal = ({ type, onClose, onSessionUpdate, terminalId }) => {
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="0.00"
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-3xl py-6 pl-14 pr-6 text-3xl font-black text-gray-800 outline-none transition-all placeholder:text-gray-200"
+                                    className="s-input"
+                                    style={{ paddingLeft: '3rem', fontSize: '2rem', height: '5rem', fontWeight: 900, textAlign: 'center' }}
                                     required
                                 />
                             </div>
                         </div>
 
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-4 rounded-2xl flex items-center gap-3 text-sm font-bold border border-red-100 italic">
-                                <AlertCircle size={20} />
-                                {error}
+                            <div style={{ background: 'rgba(255,82,82,0.1)', border: '1px solid rgba(255,82,82,0.2)', padding: '1rem', borderRadius: 'var(--r-standard)', color: '#ff5252', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <AlertCircle size={16} />
+                                {error.toUpperCase()}
                             </div>
                         )}
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-6 rounded-3xl font-black text-xl tracking-wider uppercase transition-all shadow-xl active:scale-[0.98] ${type === 'abrir'
-                                ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-700'
-                                : 'bg-red-600 text-white shadow-red-500/20 hover:bg-red-700'
-                                } disabled:opacity-50`}
+                            className={`s-btn ${type === 'abrir' ? 's-btn-primary' : 's-btn-secondary'}`}
+                            style={{ height: '4rem', fontSize: '1rem', letterSpacing: '0.1em', background: type === 'cerrar' ? 'rgba(255,82,82,0.1)' : undefined, color: type === 'cerrar' ? '#ff5252' : undefined, borderColor: type === 'cerrar' ? 'rgba(255,82,82,0.3)' : undefined }}
                         >
-                            {loading ? 'Procesando...' : (type === 'abrir' ? 'Abrir Caja' : 'Cerrar Caja')}
+                            {loading ? 'PROCESANDO...' : (type === 'abrir' ? 'INICIAR JORNADA' : 'FINALIZAR JORNADA')}
                         </button>
                     </form>
                 </div>

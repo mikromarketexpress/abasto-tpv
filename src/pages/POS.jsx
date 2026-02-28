@@ -4,9 +4,13 @@ import { supabase } from '../lib/supabase'
 import { saveOfflineSale } from '../lib/db'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
+import { useCaja } from '../context/CajaContext'
 import LoadingOverlay from '../components/LoadingOverlay'
 
 const POS = () => {
+    const { sesionActiva } = useCaja()
+    const { user } = useAuth()
     const [products, setProducts] = useState([])
     const [categories, setCategories] = useState([])
     const [selectedCategory, setSelectedCategory] = useState(null)
@@ -15,11 +19,17 @@ const POS = () => {
         const saved = localStorage.getItem('mme_pos_cart')
         return saved ? JSON.parse(saved) : []
     })
-    const [tasaBcv, setTasaBcv] = useState(46.5)
+    const [tasaBcv, setTasaBcv] = useState(sesionActiva?.tasa_bcv_apertura || 46.5)
     const [loading, setLoading] = useState(true)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const searchRef = useRef(null)
+
+    useEffect(() => {
+        if (sesionActiva?.tasa_bcv_apertura) {
+            setTasaBcv(sesionActiva.tasa_bcv_apertura)
+        }
+    }, [sesionActiva])
 
     useEffect(() => {
         localStorage.setItem('mme_pos_cart', JSON.stringify(cart))
@@ -52,7 +62,12 @@ const POS = () => {
 
             setCategories(cats || [])
             setProducts(prods || [])
-            if (cfg) setTasaBcv(cfg.tasa_bcv)
+            // Priorizamos la tasa de la sesión abierta sobre la configuración general
+            if (sesionActiva?.tasa_bcv_apertura) {
+                setTasaBcv(sesionActiva.tasa_bcv_apertura)
+            } else if (cfg) {
+                setTasaBcv(cfg.tasa_bcv)
+            }
         } catch (err) {
             console.error('Critical error in POS init:', err)
         } finally {
@@ -62,6 +77,13 @@ const POS = () => {
 
     const addToCart = (product) => {
         if (product.stock_actual <= 0) return
+
+        const existingItem = cart.find(i => i.id === product.id)
+        if (existingItem && existingItem.cantidad >= product.stock_actual) {
+            showToast(`SÓLO HAY ${product.stock_actual} DISPONIBLES`, 'error')
+            return
+        }
+
         setCart(prev => {
             const ex = prev.find(i => i.id === product.id)
             if (ex) return prev.map(i => i.id === product.id ? { ...i, cantidad: i.cantidad + 1 } : i)
@@ -70,7 +92,18 @@ const POS = () => {
     }
 
     const updateQty = (id, delta) => {
-        setCart(prev => prev.map(i => i.id === id ? { ...i, cantidad: Math.max(1, i.cantidad + delta) } : i))
+        if (delta <= 0) {
+            setCart(prev => prev.map(i => i.id === id ? { ...i, cantidad: Math.max(1, i.cantidad + delta) } : i))
+            return
+        }
+
+        const item = cart.find(i => i.id === id)
+        if (item && item.cantidad + delta > item.stock_actual) {
+            showToast(`LÍMITE DE STOCK ALCANZADO`, 'error')
+            return
+        }
+
+        setCart(prev => prev.map(i => i.id === id ? { ...i, cantidad: i.cantidad + delta } : i))
     }
 
     const removeItem = (id) => setCart(prev => prev.filter(i => i.id !== id))
@@ -89,14 +122,26 @@ const POS = () => {
             p_total_usd: total,
             p_tasa_bcv: tasaBcv,
             p_productos: cart.map(i => ({ id: i.id, cantidad: i.cantidad, precio: i.precio_venta_usd })),
-            p_pagos: [{ metodo: 'efectivo', monto: total }]
+            p_pagos: [{ metodo: 'efectivo', monto: total, monto_bs: total * tasaBcv }],
+            p_vendedor_id: user?.id,
+            p_sesion_caja_id: sesionActiva?.id
         }
         try {
             const { error } = await supabase.rpc('finalizar_venta_v2', payload)
             if (error) throw error
             showToast('VENTA FINALIZADA EXITOSAMENTE')
-        } catch {
-            await saveOfflineSale({ ...payload, total_usd: total, tasa_bcv: tasaBcv, productos: payload.p_productos, pagos: payload.p_pagos })
+            fetchInitialData() // Refrescar stock tras la venta
+        } catch (err) {
+            console.error('Checkout error:', err)
+            await saveOfflineSale({
+                ...payload,
+                total_usd: total,
+                tasa_bcv: tasaBcv,
+                productos: payload.p_productos,
+                pagos: payload.p_pagos,
+                vendedor_id: user?.id,
+                sesion_caja_id: sesionActiva?.id
+            })
             showToast('VENTA GUARDADA EN MODO OFFLINE', 'warning')
         }
         setCart([])
@@ -229,7 +274,12 @@ const POS = () => {
                                         }}
                                         className="s-product-card"
                                         onClick={() => !isOutOfStock && addToCart(p)}
-                                        style={{ opacity: isOutOfStock ? 0.4 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
+                                        style={{
+                                            opacity: isOutOfStock ? 0.8 : 1,
+                                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                                            borderColor: isOutOfStock ? '#ff3131' : undefined,
+                                            boxShadow: isOutOfStock ? '0 0 15px rgba(255, 49, 49, 0.4)' : undefined
+                                        }}
                                     >
                                         <div className="s-product-card__img" style={{ aspectRatio: '1.2/1' }}>
                                             {p.imagen_url ? (
@@ -242,7 +292,8 @@ const POS = () => {
                                                 className="s-product-card__stock"
                                                 style={{
                                                     borderColor: isOutOfStock ? '#ff3131' : isLowStock ? '#ff9100' : 'var(--s-neon)',
-                                                    background: 'rgba(0,0,0,0.8)'
+                                                    background: 'rgba(0,0,0,0.8)',
+                                                    boxShadow: isOutOfStock ? '0 0 10px rgba(255, 49, 49, 0.5)' : undefined
                                                 }}
                                             >
                                                 {isOutOfStock ? <X size={10} color="#ff3131" /> : isLowStock ? <AlertTriangle size={10} color="#ff9100" /> : <Plus size={10} color="var(--s-neon)" />}
@@ -250,11 +301,46 @@ const POS = () => {
                                             </div>
                                         </div>
 
-                                        <div className="s-product-card__info" style={{ padding: '0.75rem' }}>
-                                            <h3 style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <div className="s-product-card__info" style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                            <h3 style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>
                                                 {p.nombre.toUpperCase()}
                                             </h3>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem' }}>
+
+                                            {/* Descripción Combinada */}
+                                            <p style={{
+                                                fontSize: '0.65rem',
+                                                fontWeight: 800,
+                                                color: '#fff',
+                                                opacity: 0.7,
+                                                textTransform: 'uppercase',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
+                                            }}>
+                                                {[
+                                                    p.descripcion_corta,
+                                                    (p.descripcion_corta && (p.numero_unid || p.unidad_medida)) ? 'de' : '',
+                                                    p.numero_unid ? `${p.numero_unid}` : '',
+                                                    (() => {
+                                                        const unit = p.unidad_medida || '';
+                                                        const count = parseFloat(p.numero_unid) || 0;
+                                                        if (count <= 1 || !unit) return unit;
+                                                        return unit.endsWith('D') ? `${unit}ES` : `${unit}S`;
+                                                    })()
+                                                ].filter(Boolean).join(' ') || '—'}
+                                            </p>
+
+                                            {/* Código de Barras */}
+                                            <p style={{
+                                                fontSize: '0.8rem',
+                                                fontWeight: 800,
+                                                color: '#fff',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {p.codigo_barras || 'SIN SKU'}
+                                            </p>
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
                                                 <div className="s-product-card__price" style={{ fontSize: '1rem' }}>
                                                     ${(p.precio_venta_usd || 0).toFixed(2)}
                                                 </div>
@@ -283,7 +369,20 @@ const POS = () => {
                 <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--s-glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>ORDEN ACTUAL</h2>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--s-text-dim)', fontWeight: 800 }}>MME-POS-V5</span>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--s-text-dim)', fontWeight: 800 }}>MME-POS-V2.1</span>
+                            <span style={{
+                                fontSize: '0.6rem',
+                                color: 'var(--s-neon)',
+                                fontWeight: 900,
+                                background: 'rgba(0,230,118,0.1)',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(0,230,118,0.2)'
+                            }}>
+                                TASA: {Number(tasaBcv).toFixed(2)} BS
+                            </span>
+                        </div>
                     </div>
                     <button
                         className="s-btn s-btn-secondary"
@@ -307,8 +406,28 @@ const POS = () => {
                                     <div style={{ width: '3rem', height: '3rem', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', overflow: 'hidden', flexShrink: 0 }}>
                                         {item.imagen_url ? <img src={item.imagen_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={18} style={{ margin: 'auto', opacity: 0.1 }} />}
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                                         <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nombre?.toUpperCase() || 'PRODUCTO'}</p>
+
+                                        {/* Descripción Combinada en Carrito */}
+                                        <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#fff', opacity: 0.6, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {[
+                                                item.descripcion_corta,
+                                                (item.descripcion_corta && (item.numero_unid || item.unidad_medida)) ? 'de' : '',
+                                                item.numero_unid ? `${item.numero_unid}` : '',
+                                                (() => {
+                                                    const unit = item.unidad_medida || '';
+                                                    const count = parseFloat(item.numero_unid) || 0;
+                                                    if (count <= 1 || !unit) return unit;
+                                                    return unit.endsWith('D') ? `${unit}ES` : `${unit}S`;
+                                                })()
+                                            ].filter(Boolean).join(' ') || '—'}
+                                        </p>
+
+                                        {/* SKU en Carrito */}
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>
+                                            {item.codigo_barras || 'SIN SKU'}
+                                        </p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.2rem 0.5rem' }}>
                                                 <button onClick={() => updateQty(item.id, -1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><Minus size={12} /></button>

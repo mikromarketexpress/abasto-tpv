@@ -68,10 +68,30 @@ class ErrorBoundary extends React.Component {
                                 fontWeight: 900,
                                 cursor: 'pointer',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.1em'
+                                letterSpacing: '0.1em',
+                                marginRight: '1rem'
                             }}
                         >
                             Reiniciar Aplicación
+                        </button>
+                        <button
+                            onClick={() => {
+                                localStorage.clear();
+                                window.location.reload();
+                            }}
+                            style={{
+                                marginTop: '1rem',
+                                background: 'rgba(255,255,255,0.05)',
+                                color: '#fff',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                padding: '1rem 2rem',
+                                borderRadius: '10px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                textTransform: 'uppercase'
+                            }}
+                        >
+                            Limpiar Datos y Forzar Reinicio
                         </button>
                     </div>
                 </div>

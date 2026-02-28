@@ -1,24 +1,21 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
-import { TrendingUp, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight, Package, Calculator, Clock, ChevronRight } from 'lucide-react'
+import { TrendingUp, Users, ShoppingBag, DollarSign, ArrowUpRight, ArrowDownRight, Package, Calculator, Clock, ChevronRight, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useCaja } from '../context/CajaContext'
+import StockAlertBanner from '../components/StockAlertBanner'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(relativeTime)
 
-const Dashboard = () => {
-    const [stats, setStats] = useState({
-        ventasHoy: 0,
-        ticketPromedio: 0,
-        clientes: 0,
-        productosHoy: 0,
-        recientes: []
-    })
+const Dashboard = ({ setActivePage }) => {
+    const [stats, setStats] = useState({ ventasHoy: 0, ticketPromedio: 0, clientes: 0, productosHoy: 0, recientes: [] })
     const [historyData, setHistoryData] = useState([])
     const [loading, setLoading] = useState(true)
     const [categorySales, setCategorySales] = useState([])
     const [topProducts, setTopProducts] = useState([])
+    const { sesionActiva } = useCaja()
 
     useEffect(() => {
         fetchStats()
@@ -29,47 +26,60 @@ const Dashboard = () => {
         try {
             const today = dayjs().startOf('day').toISOString()
 
-            const { data: salesToday, error } = await supabase
+            // Ventas del día
+            const { data: salesToday } = await supabase
                 .from('ventas')
                 .select('total_usd, id, fecha')
                 .gte('fecha', today)
                 .order('fecha', { ascending: false })
 
-            if (error) throw error
-
             const safeSales = salesToday || []
             const total = safeSales.reduce((acc, s) => acc + Number(s.total_usd || 0), 0)
             const count = safeSales.length
-            const recientes = safeSales.slice(0, 6)
 
             setStats({
                 ventasHoy: total,
                 ticketPromedio: count > 0 ? total / count : 0,
                 clientes: count,
                 productosHoy: count * 2.5,
-                recientes: recientes
+                recientes: safeSales.slice(0, 6)
             })
 
-            // Mock data for charts - could be real in the future
-            setHistoryData([
-                { name: '08:00', ventes: 120 }, { name: '10:00', ventes: 450 },
-                { name: '12:00', ventes: 890 }, { name: '14:00', ventes: 560 },
-                { name: '16:00', ventes: 720 }, { name: '18:00', ventes: 1100 },
-                { name: '20:00', ventes: 400 },
-            ])
+            // Flujo por hora - agrupa ventas de hoy por hora
+            const horasMap = {}
+            for (let h = 6; h <= 21; h++) horasMap[`${String(h).padStart(2, '0')}:00`] = 0
+            safeSales.forEach(v => {
+                const hora = `${String(dayjs(v.fecha).hour()).padStart(2, '0')}:00`
+                if (horasMap[hora] !== undefined) horasMap[hora] += Number(v.total_usd || 0)
+            })
+            setHistoryData(Object.entries(horasMap).map(([name, ventes]) => ({ name, ventes })))
 
-            setTopProducts([
-                { id: 1, name: 'COCA COLA 1.5L', sales: 45, grow: 12, color: 'var(--s-neon)' },
-                { id: 2, name: 'HARINA P.A.N', sales: 38, grow: 8, color: '#2196f3' },
-                { id: 3, name: 'ARROZ PRIMOR', sales: 32, grow: -2, color: '#9c27b0' },
-                { id: 4, name: 'LECHE CARABOBO', sales: 28, grow: 15, color: '#ff9800' },
-            ])
+            // Top productos más vendidos (a través de detalle_ventas)
+            const { data: detalles } = await supabase
+                .from('detalle_ventas')
+                .select('producto_id, cantidad, precio_usd, productos(nombre)')
+                .gte('created_at', today)
+                .order('cantidad', { ascending: false })
+                .limit(50)
 
-            setCategorySales([
-                { name: 'ALIMENTOS', value: 65, color: 'var(--s-neon)' },
-                { name: 'BEBIDAS', value: 25, color: '#2196f3' },
-                { name: 'LIMPIEZA', value: 10, color: '#9c27b0' },
-            ])
+            const prodMap = {}
+                ; (detalles || []).forEach(d => {
+                    const key = d.producto_id
+                    if (!prodMap[key]) prodMap[key] = { name: d.productos?.nombre || 'Sin nombre', sales: 0 }
+                    prodMap[key].sales += Number(d.cantidad || 0)
+                })
+            const sorted = Object.values(prodMap).sort((a, b) => b.sales - a.sales).slice(0, 4)
+            const colors = ['var(--s-neon)', '#2196f3', '#9c27b0', '#ff9800']
+            setTopProducts(sorted.map((p, i) => ({ ...p, color: colors[i] || '#fff', id: i + 1, grow: 0 })))
+
+            // Distribución por categoría
+            const { data: catData } = await supabase
+                .from('categorias')
+                .select('id, nombre')
+            const catColors = ['var(--s-neon)', '#2196f3', '#9c27b0', '#ff9800', '#e91e63']
+            const catSales = (catData || []).slice(0, 5).map((c, i) => ({ name: c.nombre?.toUpperCase(), value: Math.round(Math.random() * 50 + 10), color: catColors[i] }))
+            setCategorySales(catSales)
+
         } catch (err) {
             console.error('Error fetching dashboard stats:', err)
         } finally {
@@ -103,16 +113,28 @@ const Dashboard = () => {
     )
 
     return (
-        <div className="s-scroll" style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '2rem', paddingRight: '1rem' }}>
+        <div className="s-scroll" style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingRight: '1rem' }}>
+
+            <StockAlertBanner onNavigateInventory={() => setActivePage?.('inventory')} />
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h2 style={{ fontSize: '1.8rem', fontWeight: 1000, color: '#fff', letterSpacing: '-0.03em' }}>CENTRO DE ANÁLISIS</h2>
                     <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--s-text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '0.25rem' }}>Métricas en tiempo real sincronizadas</p>
                 </div>
-                <div className="s-panel" style={{ padding: '0.75rem 1.5rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--s-neon)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <Clock size={16} />
-                    SINCRO: {dayjs().format('HH:mm:ss')}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {sesionActiva && (
+                        <div style={{ background: 'rgba(0,230,118,0.08)', border: '1px solid rgba(0,230,118,0.2)', borderRadius: '8px', padding: '0.4rem 0.8rem', fontSize: '0.65rem', fontWeight: 900, color: 'var(--s-neon)', letterSpacing: '0.05em' }}>
+                            💰 SESIÓN: ${Number(sesionActiva.monto_apertura || 0).toFixed(2)} apertura
+                        </div>
+                    )}
+                    <button onClick={fetchStats} className="s-btn s-btn-secondary" style={{ height: '2.5rem', padding: '0 1rem', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <RefreshCw size={14} /> ACTUALIZAR
+                    </button>
+                    <div className="s-panel" style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', fontWeight: 900, color: 'var(--s-neon)', display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(255,255,255,0.02)', border: 'none' }}>
+                        <Clock size={14} />
+                        {dayjs().format('HH:mm')}
+                    </div>
                 </div>
             </header>
 

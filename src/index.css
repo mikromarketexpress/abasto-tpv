@@ -415,7 +415,7 @@ textarea.s-input::placeholder {
 .s-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -860,7 +860,7 @@ select option {
 
 .s-liquid-row {
   display: grid;
-  grid-template-columns: 3.5rem 2fr 1fr 1.5fr 1fr 4rem;
+  grid-template-columns: 3.5rem 2fr 1.8fr 0.8fr 1.5fr 1fr 1fr 4rem;
   align-items: center;
   padding: 1rem 1.5rem;
   background: rgba(255, 255, 255, 0.02);
@@ -924,9 +924,9 @@ select option {
 }
 
 .s-liquid-row p {
-  font-size: 0.65rem;
+  font-size: 1rem;
   font-weight: 800;
-  color: var(--s-text-dim);
+  color: #fff;
   text-transform: uppercase;
   margin: 0;
 }
@@ -962,7 +962,7 @@ select option {
 
 .s-liquid-header {
   display: grid;
-  grid-template-columns: 3.5rem 2fr 1fr 1.5fr 1fr 4rem;
+  grid-template-columns: 3.5rem 2fr 1.8fr 0.8fr 1.5fr 1fr 1fr 4rem;
   padding: 0 1.5rem 0.5rem 2.5rem;
   font-size: 0.65rem;
   font-weight: 900;

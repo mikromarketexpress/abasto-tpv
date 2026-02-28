@@ -92,7 +92,7 @@ const Inventory = () => {
             categoria_id: categories[0]?.id || '',
             stock_actual: 0,
             numero_unidades: 1,
-            unidad_medida: 'UND',
+            unidad_medida: 'UNIDAD',
             descripcion_corta: ''
         })
         setImageFile(null)
@@ -390,9 +390,11 @@ const Inventory = () => {
                 <div className="s-liquid-header">
                     <span />
                     <span>PRODUCTO</span>
+                    <span>DESCRIPCIÓN DETALLADA</span>
                     <span>CATEGORÍA</span>
                     <span style={{ textAlign: 'center' }}>STOCK ACTUAL</span>
-                    <span style={{ textAlign: 'right' }}>VALOR UNIT.</span>
+                    <span style={{ textAlign: 'right' }}>COSTO (USD)</span>
+                    <span style={{ textAlign: 'right' }}>VENTA (USD)</span>
                     <span />
                 </div>
 
@@ -436,6 +438,31 @@ const Inventory = () => {
                                         <p>{p.codigo_barras || 'SIN SKU'}</p>
                                     </div>
 
+                                    {/* Descripción Combinada */}
+                                    <div style={{ paddingRight: '0.75rem' }}>
+                                        <span style={{
+                                            fontSize: '0.78rem',
+                                            fontWeight: 700,
+                                            color: '#fff',
+                                            letterSpacing: '0.02em',
+                                            lineHeight: 1.4,
+                                            display: 'block'
+                                        }}>
+                                            {[
+                                                p.descripcion_corta,
+                                                (p.descripcion_corta && (p.numero_unid || p.unidad_medida)) ? 'de' : '',
+                                                p.numero_unid ? `${p.numero_unid}` : '',
+                                                (() => {
+                                                    const unit = p.unidad_medida || '';
+                                                    const count = parseFloat(p.numero_unid) || 0;
+                                                    if (count <= 1 || !unit) return unit;
+                                                    // Regla: si termina en D (UNIDAD) -> ES, sino -> S
+                                                    return unit.endsWith('D') ? `${unit}ES` : `${unit}S`;
+                                                })()
+                                            ].filter(Boolean).join(' ') || '—'}
+                                        </span>
+                                    </div>
+
                                     {/* Category */}
                                     <div>
                                         <span className="s-badge s-badge-neon">{catName}</span>
@@ -444,8 +471,9 @@ const Inventory = () => {
                                     {/* Stock Barra */}
                                     <div className="s-liquid-row__stock-bar">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 1000 }}>
-                                            <span style={{ color: isLowStock ? '#ff9100' : 'var(--s-neon)' }}>{p.stock_actual} DISPONIBLES</span>
-                                            <span style={{ opacity: 0.3 }}>{p.unidad_medida}</span>
+                                            <span style={{ color: '#fff' }}>
+                                                {p.stock_actual} {p.stock_actual > 1 ? 'UNIDADES DISPONIBLES' : 'UNIDAD DISPONIBLE'}
+                                            </span>
                                         </div>
                                         <div className="s-liquid-row__bar-track">
                                             <motion.div
@@ -460,7 +488,12 @@ const Inventory = () => {
                                         </div>
                                     </div>
 
-                                    {/* Price */}
+                                    {/* Cost Price */}
+                                    <div className="s-liquid-row__price" style={{ color: '#fff', textShadow: 'none', opacity: 0.8 }}>
+                                        ${(p.precio_costo || 0).toFixed(2)}
+                                    </div>
+
+                                    {/* Sale Price */}
                                     <div className="s-liquid-row__price">
                                         ${(p.precio_venta_usd || 0).toFixed(2)}
                                     </div>

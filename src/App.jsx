@@ -13,7 +13,18 @@ import { getOfflineSales, deleteOfflineSale } from './lib/db'
 import { useToast } from './context/ToastContext'
 
 function App() {
-    const { isAuthenticated } = useAuth()
+    // BYPASS LOGIN TEMPORALMENTE PARA DESARROLLO/PRUEBAS
+    const { isAuthenticated: realIsAuth, user: realUser } = useAuth()
+
+    // Forzamos el acceso
+    const isAuthenticated = true
+    const user = realUser || {
+        id: '00000000-0000-0000-0000-000000000000',
+        nombre_vendedor: 'MODO DESARROLLO',
+        rol: 'admin'
+    }
+
+    console.log('App: MODO LOGIN DESACTIVADO - Acceso Directo')
     const [activePage, setActivePage] = useState('pos')
     const [isOnline, setIsOnline] = useState(navigator.onLine)
     const [showHelp, setShowHelp] = useState(false)

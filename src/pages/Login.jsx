@@ -37,45 +37,59 @@ const Login = () => {
     }
 
     const handlePinClick = (num) => {
-        if (pin.length < 4) setPin(prev => prev + num)
+        if (pin.length < 4) {
+            const nextPin = pin + num
+            setPin(nextPin)
+            console.log('PIN actual:', nextPin)
+            if (nextPin.length === 4) {
+                console.log('PIN completo detectado, intentando login directo...')
+                handleLoginSubmit(nextPin)
+            }
+        }
     }
 
-    const handleClear = () => setPin('')
+    const handleClear = () => {
+        console.log('Limpiando PIN')
+        setPin('')
+    }
     const handleDelete = () => setPin(prev => prev.slice(0, -1))
 
-    const handleLoginSubmit = async () => {
-        if (pin.length !== 4 || !selectedSeller) return
-        console.log('Attempting login for:', selectedSeller.nombre_vendedor)
-        try {
-            // Aseguramos que ambos sean strings para la comparación
-            const inputPin = String(pin)
-            const storedPin = String(selectedSeller.pin_acceso)
+    useEffect(() => {
+        console.log('Login: Vendedor seleccionado:', selectedSeller?.nombre_vendedor)
+    }, [selectedSeller])
 
-            console.log('Comparing:', inputPin, 'with:', storedPin)
+    const handleLoginSubmit = async (pinValue = pin) => {
+        if (!pinValue || pinValue.length !== 4 || !selectedSeller) {
+            console.log('Login abortado: PIN incompleto o sin vendedor seleccionado')
+            return
+        }
+
+        console.log('--- INTENTO DE LOGIN ---')
+        console.log('Vendedor:', selectedSeller.nombre_vendedor)
+
+        try {
+            const inputPin = String(pinValue).trim()
+            const storedPin = String(selectedSeller.pin_acceso).trim()
+
+            console.log(`PIN Ingresado: "${inputPin}" | PIN Correcto: "${storedPin}"`)
 
             if (inputPin === storedPin) {
-                console.log('Login success!')
+                console.log('>>> LOGIN CORRECTO: Redirigiendo...')
                 showToast(`BIENVENIDO, ${selectedSeller.nombre_vendedor.toUpperCase()}`, 'success')
                 login(selectedSeller)
             } else {
-                console.log('Login failed: PIN incorrect')
+                console.warn('>>> LOGIN FALLIDO: PIN Incorrecto')
                 showToast('PIN INCORRECTO', 'error')
-                setPin('')
+                setPin('') // Limpiar para reintentar
             }
         } catch (err) {
-            console.error('Login error:', err)
+            console.error('>>> ERROR CRÍTICO EN LOGIN:', err)
             showToast('ERROR AL INICIAR SESIÓN', 'error')
+            setPin('')
         }
     }
 
-    // Auto-submit when 4 digits are entered
-    useEffect(() => {
-        if (pin.length === 4) {
-            setTimeout(() => {
-                handleLoginSubmit()
-            }, 100)
-        }
-    }, [pin])
+
 
     return (
         <div className="s-login-container" style={{

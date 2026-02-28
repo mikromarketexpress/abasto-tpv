@@ -14,15 +14,18 @@ export const AuthProvider = ({ children }) => {
     })
 
     const login = (userData) => {
+        console.log('AuthContext: Ejecutando login para', userData?.nombre_vendedor)
         try {
             setUser(userData)
             if (typeof localStorage !== 'undefined') {
                 localStorage.setItem('mme_auth_user', JSON.stringify(userData))
             }
+            console.log('AuthContext: Estado de usuario actualizado')
         } catch (e) { console.error('Login storage error:', e) }
     }
 
     const logout = () => {
+        console.log('AuthContext: Ejecutando logout')
         try {
             setUser(null)
             if (typeof localStorage !== 'undefined') {

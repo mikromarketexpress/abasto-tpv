@@ -11,7 +11,9 @@ export const ToastProvider = ({ children }) => {
 
     const playSound = (type) => {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+            const ctx = new AudioContextClass();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
 

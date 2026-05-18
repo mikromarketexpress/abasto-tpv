@@ -415,7 +415,7 @@ textarea.s-input::placeholder {
 .s-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -860,7 +860,7 @@ select option {
 
 .s-liquid-row {
   display: grid;
-  grid-template-columns: 3.5rem 2fr 1fr 1.5fr 1fr 4rem;
+  grid-template-columns: 3.5rem 2fr 1.8fr 0.8fr 1.5fr 1fr 1fr 4rem;
   align-items: center;
   padding: 1rem 1.5rem;
   background: rgba(255, 255, 255, 0.02);
@@ -924,9 +924,9 @@ select option {
 }
 
 .s-liquid-row p {
-  font-size: 0.65rem;
+  font-size: 1rem;
   font-weight: 800;
-  color: var(--s-text-dim);
+  color: #fff;
   text-transform: uppercase;
   margin: 0;
 }
@@ -962,11 +962,129 @@ select option {
 
 .s-liquid-header {
   display: grid;
-  grid-template-columns: 3.5rem 2fr 1fr 1.5fr 1fr 4rem;
+  grid-template-columns: 3.5rem 2fr 1.8fr 0.8fr 1.5fr 1fr 1fr 4rem;
   padding: 0 1.5rem 0.5rem 2.5rem;
   font-size: 0.65rem;
   font-weight: 900;
   color: var(--s-neon);
   text-transform: uppercase;
   letter-spacing: 0.15em;
+}
+
+/* ============================================================
+   PRINT STYLES — Carta (Letter)
+   ============================================================ */
+@media print {
+  *, *::before, *::after {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11px;
+    overflow: visible !important;
+  }
+
+  #root {
+    overflow: visible !important;
+  }
+
+  .s-header,
+  .s-sidebar,
+  aside,
+  .s-footer,
+  button,
+  .no-print,
+  .s-ambient-blue,
+  .s-ambient-green {
+    display: none !important;
+  }
+
+  .s-layout {
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+  .s-layout__body {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .s-layout__main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .print-report {
+    background: #fff !important;
+    color: #000 !important;
+    padding: 1.5cm 2cm !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .print-report * {
+    color: #000 !important;
+    text-shadow: none !important;
+    border-color: #ccc !important;
+    box-shadow: none !important;
+  }
+
+  .print-report h1,
+  .print-report h2,
+  .print-report h3 {
+    color: #000 !important;
+    font-weight: 900 !important;
+  }
+
+  .print-summary-card {
+    border: 1px solid #ccc !important;
+    background: #f9f9f9 !important;
+    color: #000 !important;
+  }
+
+  .print-summary-card * {
+    color: #000 !important;
+  }
+
+  .print-table-header {
+    background: #eee !important;
+    color: #000 !important;
+  }
+
+  .print-table-row {
+    border-bottom: 1px solid #ddd !important;
+  }
+
+  .print-cierre {
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    font-family: 'Courier New', Courier, monospace !important;
+  }
+  .print-cierre * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #000 !important;
+  }
+  .print-cierre input {
+    display: none !important;
+  }
+  .print-cierre table td {
+    font-size: 9pt !important;
+  }
+
+  @page {
+    size: 80mm 297mm;
+    margin: 0;
+  }
 }

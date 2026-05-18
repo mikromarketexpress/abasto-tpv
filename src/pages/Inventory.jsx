@@ -1,23 +1,80 @@
 import React, { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { Search, Plus, Minus, Edit2, ChevronRight, AlertTriangle, Package, X, Smartphone, Filter, Hash, Coffee, Pizza, Apple, Milk, Brush, Layers, Camera, Upload, CheckCircle2, XCircle, Trash2 } from 'lucide-react'
+import {
+    Search, Plus, Edit2, Package, X, Filter, Layers, Camera, Trash2, Upload, CloudUpload, Image,
+    Coffee, Pizza, Apple, Milk, Brush, Wrench, Hammer, Utensils, ShoppingBasket,
+    Beer, Candy, IceCream, Wine, Carrot, Construction, Lightbulb, Pipette, Drill, Beef, Fish, Grape, Egg,
+    Tv, Speaker, Laptop, Headphones, Printer, Book, Pencil, Gift, Shirt, Footprints, Trash, Droplets, Zap, ShowerHead, Stethoscope, Baby, Dog, Cat, Bike, Truck, Car, Smartphone, Database, Check, Loader
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import LoadingOverlay from '../components/LoadingOverlay'
 import { useToast } from '../context/ToastContext'
-import { productSchema } from '../lib/schemas'
-import { logAudit } from '../lib/audit'
+import { useDatabase } from '../hooks/useDatabase'
+import { useImageStorage } from '../hooks/useImageStorage'
+import { CategoryDropdown } from '../components/CategoryDropdown'
+import CategoryManager from '../components/CategoryManager'
+import CurrencyInput from '../components/CurrencyInput'
+import { formatUSD, formatBS } from '../lib/financialUtils'
+import { getProductImageUrl, DEFAULT_PRODUCT_IMAGE, GOOGLE_DRIVE_FOLDER_ID } from '../lib/imageUtils'
+import defaultPlaceholderImg from '../../assets/img/subir_imagen.png'
 
-const getIcon = (name = '') => {
-    const n = (name || '').toLowerCase()
-    if (n.includes('bebida')) return <Coffee size={16} />
-    if (n.includes('snack')) return <Pizza size={16} />
-    if (n.includes('fruta')) return <Apple size={16} />
-    if (n.includes('lácteo') || n.includes('lacteo')) return <Milk size={16} />
-    if (n.includes('limpieza')) return <Brush size={16} />
-    return <Layers size={16} />
+const CATEGORY_ICONS = {
+    Coffee, Pizza, Apple, Milk, Brush, Layers, Wrench, Hammer, Utensils, ShoppingBasket,
+    Beer, Candy, IceCream, Wine, Carrot, Construction, Lightbulb, Pipette, Drill, Beef, Fish, Grape, Egg,
+    Tv, Speaker, Laptop, Headphones, Printer, Book, Pencil, Gift, Shirt, Footprints, Trash, Droplets, Zap,
+    ShowerHead, Stethoscope, Baby, Dog, Cat, Bike, Truck, Car, Smartphone, Camera, Database
+}
+
+const ICON_GALLERY = {
+    'ALIMENTOS': [
+        { name: 'Coffee', label: 'BEBIDAS' }, { name: 'Apple', label: 'FRUTAS' }, { name: 'Carrot', label: 'VERDURAS' },
+        { name: 'Milk', label: 'LÁCTEOS' }, { name: 'Egg', label: 'HUEVOS' }, { name: 'Beef', label: 'CARNES' },
+        { name: 'Fish', label: 'PESCADO' }, { name: 'Pizza', label: 'PANADERÍA' }, { name: 'Utensils', label: 'COMIDA' },
+        { name: 'IceCream', label: 'CONGELADOS' }, { name: 'Candy', label: 'DULCES' }, { name: 'ShoppingBasket', label: 'ABARROTES' }
+    ],
+    'LIMPIEZA Y ASEO': [
+        { name: 'Brush', label: 'LIMPIEZA' }, { name: 'Droplets', label: 'ASEO PERSONAL' }, { name: 'ShowerHead', label: 'BAÑO' },
+        { name: 'Shirt', label: 'ROPA' }, { name: 'Trash', label: 'PAPELERÍA' }
+    ],
+    'OTROS': [
+        { name: 'Baby', label: 'BEBÉ' }, { name: 'Dog', label: 'MASCOTAS' }, { name: 'Layers', label: 'VARIOS' }
+    ]
+}
+
+const getIcon = (name = '', iconName = '') => {
+    if (iconName && CATEGORY_ICONS[iconName]) {
+        const IconComp = CATEGORY_ICONS[iconName]
+        return <IconComp size={16} />
+    }
+    const n = String(name || '').toLowerCase()
+    if (n.includes('bebida')) return <CATEGORY_ICONS.Coffee size={16} />
+    if (n.includes('snack') || n.includes('dulce')) return <CATEGORY_ICONS.Candy size={16} />
+    if (n.includes('fruta') || n.includes('verdura')) return <CATEGORY_ICONS.Apple size={16} />
+    if (n.includes('lácteo') || n.includes('lacteo') || n.includes('huevo')) return <CATEGORY_ICONS.Milk size={16} />
+    if (n.includes('carne') || n.includes('embutido')) return <CATEGORY_ICONS.Beef size={16} />
+    if (n.includes('panader')) return <CATEGORY_ICONS.Pizza size={16} />
+    if (n.includes('congelad')) return <CATEGORY_ICONS.IceCream size={16} />
+    if (n.includes('limpieza')) return <CATEGORY_ICONS.Brush size={16} />
+    if (n.includes('aseo') || n.includes('higiene')) return <CATEGORY_ICONS.Droplets size={16} />
+    if (n.includes('mascota')) return <CATEGORY_ICONS.Dog size={16} />
+    if (n.includes('bebé')) return <CATEGORY_ICONS.Baby size={16} />
+    return <CATEGORY_ICONS.Layers size={16} />
+}
+
+const LoadingOverlay = ({ isVisible, message }) => {
+    if (!isVisible) return null
+    return (
+        <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem'
+        }}>
+            <Loader size={40} style={{ color: 'var(--s-neon)', animation: 'spin 1s linear infinite' }} />
+            <span style={{ color: 'var(--s-neon)', fontWeight: 900, letterSpacing: '0.1em' }}>{message || 'CARGANDO...'}</span>
+        </div>
+    )
 }
 
 const Inventory = () => {
+    const { isReady, productos: dbProductos, categorias: dbCategorias, addProducto, updateProducto, deleteProducto, addCategory, deleteCategory, refresh } = useDatabase()
+    const { uploadImage, uploading: isUploadingImage } = useImageStorage()
     const [products, setProducts] = useState([])
     const [categories, setCategories] = useState([])
     const [selectedCategory, setSelectedCategory] = useState('all')
@@ -27,46 +84,34 @@ const Inventory = () => {
     const [formErrors, setFormErrors] = useState([])
     const [loading, setLoading] = useState(true)
     const [isAdding, setIsAdding] = useState(false)
-    const [imageFile, setImageFile] = useState(null)
     const [isSaving, setIsSaving] = useState(false)
     const [isAddingCategory, setIsAddingCategory] = useState(false)
-    const [newCategoryName, setNewCategoryName] = useState('')
+    const [editingCategory, setEditingCategory] = useState(null)
+    const [categoryName, setCategoryName] = useState('')
+    const [selectedIcon, setSelectedIcon] = useState('Layers')
+    const [activeIconGroup, setActiveIconGroup] = useState('ALIMENTOS')
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const [productToDelete, setProductToDelete] = useState(null)
+    const [showImageLinker, setShowImageLinker] = useState(false)
+    const [showCategoryManager, setShowCategoryManager] = useState(false)
     const { showToast } = useToast()
 
-    useEffect(() => {
-        fetchInitialData()
-        const channel = supabase
-            .channel('inventory-sync')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, () => fetchProducts())
-            .subscribe()
-        return () => { supabase.removeChannel(channel) }
-    }, [])
+    const TASA_BCV = 46.5
 
-    const fetchInitialData = async () => {
-        setLoading(true)
-        try {
-            const { data: cats, error: errCats } = await supabase.from('categorias').select('*').order('orden')
-            if (errCats) throw errCats
-            setCategories(cats || [])
-            await fetchProducts()
-        } catch (err) {
-            console.error('Error in initial data fetch:', err)
-        } finally {
+    useEffect(() => {
+        if (isReady) {
+            setProducts(dbProductos || [])
+            const catsWithAll = [
+                { id: 'all', nombre: 'TODAS', icono_nombre: 'Layers' },
+                ...(dbCategorias || []).map(c => ({
+                    id: c.id,
+                    nombre: c.nombre,
+                    icono_nombre: c.icono_nombre || 'Layers'
+                }))
+            ]
+            setCategories(catsWithAll)
             setLoading(false)
         }
-    }
-
-    const fetchProducts = async () => {
-        try {
-            const { data, error } = await supabase.from('productos_con_precios').select('*')
-            if (error) throw error
-            setProducts(data || [])
-        } catch (err) {
-            console.error('Error fetching products:', err)
-        }
-    }
+    }, [isReady, dbProductos, dbCategorias])
 
     const handleEdit = (p) => {
         setIsAdding(false)
@@ -75,9 +120,11 @@ const Inventory = () => {
         setEditForm({
             ...p,
             precio_costo: p.precio_costo || 0,
-            precio_unitario: p.precio_venta_usd || 0
+            precio_usd: p.precio_usd || 0,
+            stock: p.stock || 0,
+            numero_unid: p.numero_unid || 1,
+            tasa_bcv: p.tasa_bcv ?? ''
         })
-        setImageFile(null)
     }
 
     const handleNew = () => {
@@ -87,151 +134,265 @@ const Inventory = () => {
         setEditForm({
             nombre: '',
             precio_costo: 0,
-            precio_unitario: 0,
+            precio_usd: 0,
             codigo_barras: '',
-            categoria_id: categories[0]?.id || '',
-            stock_actual: 0,
-            numero_unidades: 1,
-            unidad_medida: 'UND',
-            descripcion_corta: ''
+            categoria_id: categories[1]?.id || '',
+            categoria: '',
+            categoria_nombre: '',
+            stock: 0,
+            numero_unid: 1,
+            unidad_medida: 'UNIDAD',
+            descripcion_corta: '',
+            tasa_bcv: ''
         })
-        setImageFile(null)
     }
 
-    const handleImageChange = (e) => {
+    const manejarSubidaImagen = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const optimizarImagen = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 500;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height = Math.round((height * MAX_SIZE) / width);
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width = Math.round((width * MAX_SIZE) / height);
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const mimeType = file.type || 'image/jpeg';
+                    const base64Data = canvas.toDataURL(mimeType, 0.8);
+                    resolve(base64Data);
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    };
+
+    const handleImageChange = async (e) => {
         const file = e.target.files[0]
         if (!file) return
-        const reader = new FileReader()
-        reader.onload = (event) => {
-            setEditForm(prev => ({ ...prev, imagen_url: event.target.result }))
-            setImageFile(file)
+        
+        setEditForm(prev => ({ 
+            ...prev, 
+            _imageFile: file,
+            _uploadingImage: true,
+            _uploadProgress: 'CONVIRTIENDO IMAGEN...'
+        }))
+
+        try {
+            const base64Data = await manejarSubidaImagen(file);
+            const previewUrl = URL.createObjectURL(file);
+            const ext = file.type ? file.type.split('/')[1] : 'webp';
+            setEditForm(prev => ({ 
+                ...prev, 
+                imagen_url: previewUrl,
+                _imageBase64: base64Data,
+                _imageExtension: ext,
+                _uploadingImage: false,
+                _uploadProgress: null
+            }))
+        } catch (error) {
+            setEditForm(prev => ({
+                ...prev,
+                _uploadingImage: false,
+                _uploadProgress: null
+            }))
+            showToast('ERROR AL LEER ARCHIVO LOCAL', 'error')
         }
-        reader.readAsDataURL(file)
+    }
+
+    const handleImageUpload = async () => {
+        if (!editForm._imageFile) return false
+        
+        setEditForm(prev => ({ 
+            ...prev, 
+            _uploadingImage: true,
+            _uploadProgress: 'SUBIENDO A GOOGLE DRIVE...'
+        }))
+
+        const result = await uploadImage(
+            editForm._imageFile, 
+            editingId === 'new' ? `prod_${Date.now()}` : editingId
+        )
+
+        if (result && result.success) {
+            setEditForm(prev => ({ 
+                ...prev, 
+                imagen_url: result.url,
+                _uploadingImage: false,
+                _uploadProgress: null,
+                _imageFile: null
+            }))
+            showToast('IMAGEN SUBIDA A GOOGLE DRIVE', 'success')
+            return result.url
+        } else {
+            setEditForm(prev => ({ 
+                ...prev, 
+                _uploadingImage: false,
+                _uploadProgress: null
+            }))
+            showToast(result?.error || 'FALLO AL SUBIR LA IMAGEN', 'error')
+            return null
+        }
     }
 
     const validateForm = (form) => {
         const errors = []
         if (!form.nombre?.trim()) errors.push('nombre')
-        if (form.precio_costo === null || form.precio_costo === undefined || form.precio_costo === '') errors.push('precio_costo')
-        if (form.precio_unitario === null || form.precio_unitario === undefined || form.precio_unitario === '') errors.push('precio_unitario')
-        if (form.numero_unidades === null || form.numero_unidades === undefined || form.numero_unidades === '') errors.push('numero_unidades')
-        if (form.stock_actual === null || form.stock_actual === undefined || form.stock_actual === '') errors.push('stock_actual')
-        if (!form.unidad_medida?.trim()) errors.push('unidad_medida')
+        if (!form.precio_usd && form.precio_usd !== 0) errors.push('precio_usd')
+        if (!form.stock && form.stock !== 0) errors.push('stock')
         return errors
     }
 
     const saveEdit = async () => {
+        if (editForm._uploadingImage || isUploadingImage) {
+            showToast('ESPERA A QUE TERMINE DE SUBIR LA IMAGEN', 'warning')
+            return
+        }
+
         setIsSaving(true)
+        setFormErrors([])
+
         try {
             const currentErrors = validateForm(editForm)
             if (currentErrors.length > 0) {
                 setFormErrors(currentErrors)
-                throw new Error('Faltan datos requeridos. Por favor, complete los campos remarcados en rojo.')
+                throw new Error('COMPLETA LOS CAMPOS REQUERIDOS')
             }
-            setFormErrors([])
 
-            // Verificar si el SKU o código de barras ya existe (solo si estamos añadiendo y hay código)
-            if (isAdding && editForm.codigo_barras?.trim()) {
-                const { data: existing, error: existError } = await supabase
-                    .from('productos')
-                    .select('id')
-                    .eq('codigo_barras', editForm.codigo_barras.trim())
-                    .single()
+            if (!editForm.nombre?.trim()) {
+                throw new Error('EL NOMBRE ES OBLIGATORIO')
+            }
 
-                if (existing) {
-                    setFormErrors(['codigo_barras'])
-                    showToast('El Producto existe, cambie el código o ingrese uno nuevo', 'warning')
-                    setIsSaving(false)
-                    return
+            if (!editForm.precio_usd && editForm.precio_usd !== 0) {
+                throw new Error('EL PRECIO DE VENTA ES OBLIGATORIO')
+            }
+
+            const productId = editingId === 'new' ? crypto.randomUUID() : editingId
+            const selectedCat = categories.find(c => c.id === editForm.categoria_id)
+            let categoriaNombre = editForm.categoria_nombre || editForm.categoria || selectedCat?.nombre || ''
+
+            if (!categoriaNombre.trim()) {
+                showToast('DEBES SELECCIONAR UNA CATEGORÍA', 'error')
+                return
+            }
+
+            const tasaBCV = parseFloat(editForm.tasa_bcv) || 0
+            
+            const cleanImageUrl = String(editForm.imagen_url || '').startsWith('blob:') || String(editForm.imagen_url || '').startsWith('data:')
+                ? '' 
+                : String(editForm.imagen_url || '')
+
+            // OPTIMIZACIÓN Y COMPRESIÓN SÍNCRONA INTERCEPTADA:
+            let base64Optimizado = editForm._imageBase64 || null
+            let extensionOptimizado = editForm._imageExtension || null
+
+            if (editForm._imageFile) {
+                try {
+                    base64Optimizado = await optimizarImagen(editForm._imageFile)
+                    extensionOptimizado = editForm._imageFile.type ? editForm._imageFile.type.split('/')[1] : 'webp'
+                    if (extensionOptimizado === 'jpeg') {
+                        extensionOptimizado = 'jpg'
+                    }
+                } catch (err) {
+                    throw new Error('FALLO AL OPTIMIZAR LA IMAGEN: ' + err.message)
                 }
-            }
-
-            const rawData = {
-                nombre: editForm.nombre,
-                precio_costo: parseFloat(editForm.precio_costo) || 0,
-                precio_unitario: parseFloat(editForm.precio_unitario) || 0,
-                codigo_barras: editForm.codigo_barras || '',
-                categoria_id: editForm.categoria_id,
-                stock_actual: parseInt(editForm.stock_actual) || 0,
-                numero_unidades: parseFloat(editForm.numero_unidades) || 1,
-                unidad_medida: editForm.unidad_medida || 'UNIDAD',
-                descripcion_corta: editForm.descripcion_corta || '',
-                imagen_url: editForm.imagen_url || null
-            }
-
-            const validated = productSchema.safeParse(rawData)
-            if (!validated.success) {
-                const firstError = validated.error.errors[0].message
-                throw new Error(firstError)
             }
 
             const payload = {
-                nombre: validated.data.nombre,
-                precio_costo: validated.data.precio_costo,
-                precio_venta_usd: validated.data.precio_unitario, // Mapeado al Campo 'PRECIO DE VENTA (UDS)'
-                codigo_barras: validated.data.codigo_barras,  // Mapeado al Campo 'CÓDIGO DE BARRAS / SKU'
-                categoria_id: validated.data.categoria_id,
-                stock_actual: parseInt(validated.data.stock_actual) || 0, // Mapeado directamente a stock_actual
-                numero_unid: validated.data.numero_unidades,  // Mapeado al Campo 'NÚMERO UNID.'
-                unidad_medida: validated.data.unidad_medida,  // Mapeado al Campo 'UNIDAD MED.'
-                descripcion_corta: validated.data.descripcion_corta, // Mapeado al Campo 'DESCRIPCIÓN CORTA'
-                imagen_url: validated.data.imagen_url
+                id: productId,
+                nombre: String(editForm.nombre || '').trim().toUpperCase(),
+                descripcion_corta: String(editForm.descripcion_corta || '').trim(),
+                numero_unid: parseFloat(editForm.numero_unid) || 1,
+                unidad_medida: String(editForm.unidad_medida || 'UNIDAD'),
+                categoria: String(categoriaNombre).trim().toUpperCase(),
+                categoria_nombre: String(categoriaNombre).trim().toUpperCase(),
+                precio_usd: parseFloat(editForm.precio_usd) || 0,
+                precio_costo: parseFloat(editForm.precio_costo) || 0,
+                stock: parseInt(editForm.stock) || 0,
+                stock_minimo: parseInt(editForm.stock_minimo) || 5,
+                imagen_url: cleanImageUrl,
+                codigo_barras: String(editForm.codigo_barras || ''),
+                tasa_bcv: String(tasaBCV),
+                imagenBase64: base64Optimizado,
+                extension: extensionOptimizado,
+                imagenNombre: base64Optimizado ? `${productId}.${extensionOptimizado}` : null
             }
 
-            if (isAdding) {
-                payload.stock_minimo = 5
-                payload.esta_activo = true
+            showToast('GUARDANDO EN GOOGLE SHEETS...', 'info')
+            
+            const result = isAdding ? await addProducto(payload) : await updateProducto(payload)
+            
+            if (result && !result.success) {
+                throw new Error(result.error || 'FALLO EN EL SERVIDOR DE GOOGLE SHEETS')
             }
+            
+            // Forzar una sincronización limpia para actualizar ID de Drive
+            await refresh()
 
-            console.log("-> PAYLOAD A ENVIAR A SUPABASE (Tabla: productos):", payload)
-
-            let newProductId = editingId;
-
-            if (isAdding) {
-                const { data: newProd, error: insertError } = await supabase
-                    .from('productos')
-                    .insert([payload])
-                    .select('id')
-                    .single()
-
-                if (insertError) throw insertError
-                newProductId = newProd.id
-
-                // Sincronización con Lotes
-                // Registramos el valor del stock en el primer lote de 'lotes_inventario'
-                if (payload.stock_actual > 0) {
-                    const { error: loteError } = await supabase
-                        .from('lotes_inventario')
-                        .insert([{
-                            producto_id: newProductId,
-                            cantidad_inicial: payload.stock_actual,
-                            cantidad_actual: payload.stock_actual,
-                            costo_unitario: payload.precio_costo,
-                            fecha_ingreso: new Date().toISOString()
-                        }])
-                    if (loteError) {
-                        console.warn("Error insertando el lote inicial:", loteError)
-                        // No interrumpimos la creación principal pero se notifica a consola
-                    }
-                }
-            } else {
-                const { error: updateError } = await supabase
-                    .from('productos')
-                    .update(payload)
-                    .eq('id', editingId)
-                if (updateError) throw updateError
-            }
-
-            await logAudit(
-                isAdding ? 'CREATE_PRODUCT' : 'UPDATE_PRODUCT',
-                'INVENTORY',
-                { nombre: payload.nombre, id: newProductId }
-            )
-
-            showToast(isAdding ? 'Producto registrado exitosamente' : 'Cambios guardados')
             setEditingId(null)
-            fetchProducts()
+            setEditForm({
+                nombre: '',
+                precio_costo: 0,
+                precio_usd: 0,
+                codigo_barras: '',
+                categoria_id: '',
+                categoria: '',
+                categoria_nombre: '',
+                stock: 0,
+                numero_unid: 1,
+                unidad_medida: 'UNIDAD',
+                descripcion_corta: '',
+                tasa_bcv: '',
+                imagen_url: '',
+                _imageFile: null,
+                _imageBase64: null,
+                _imageExtension: null
+            })
+            showToast(isAdding ? '¡PRODUCTO CREADO CON ÉXITO!' : '¡PRODUCTO ACTUALIZADO!', 'success')
+        } catch (error) {
+            showToast(error.message || 'ERROR AL GUARDAR', 'error')
+        } finally {
+            setIsSaving(false)
+        }
+    }
 
+    const deleteProduct = async (id, name) => {
+        if (!confirm(`¿Eliminar "${name}"?`)) return
+        setIsSaving(true)
+        try {
+            await deleteProducto(id)
+            showToast('Producto eliminado')
+            setEditingId(null)
         } catch (error) {
             showToast(error.message, 'error')
         } finally {
@@ -239,41 +400,22 @@ const Inventory = () => {
         }
     }
 
-    const deleteProduct = (id, name) => {
-        setProductToDelete({ id, name })
-    }
-
-    const confirmDeleteProduct = async () => {
-        if (!productToDelete) return
+    const handleCategoryAction = async () => {
+        if (!categoryName.trim()) return
         setIsSaving(true)
         try {
-            const { error } = await supabase.from('productos').delete().eq('id', productToDelete.id)
-            if (error) throw error
-            await logAudit('DELETE_PRODUCT', 'INVENTORY', { id: productToDelete.id, nombre: productToDelete.name })
-            showToast('Producto eliminado', 'success')
-            setEditingId(null)
-            setProductToDelete(null)
-            fetchProducts()
-        } catch (error) {
-            showToast(error.message, 'error')
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
-    const saveCategory = async () => {
-        if (!newCategoryName.trim()) return
-        setIsSaving(true)
-        try {
-            const { error } = await supabase.from('categorias').insert([{
-                nombre: newCategoryName.trim(),
+            await addCategory({
+                id: editingCategory?.id || crypto.randomUUID(),
+                nombre: String(categoryName || '').trim().toUpperCase(),
+                icono_nombre: selectedIcon,
+                icono: { name: selectedIcon, color: '#808080' },
                 orden: categories.length + 1
-            }])
-            if (error) throw error
-            showToast('Categoría creada exitosamente')
+            })
+            showToast(editingCategory ? 'Categoría actualizada' : 'Categoría creada')
+            setCategoryName('')
+            setSelectedIcon('Layers')
+            setEditingCategory(null)
             setIsAddingCategory(false)
-            setNewCategoryName('')
-            fetchInitialData()
         } catch (error) {
             showToast(error.message, 'error')
         } finally {
@@ -282,192 +424,151 @@ const Inventory = () => {
     }
 
     const filtered = products.filter(p => {
-        const q = (search || '').toLowerCase()
-        const nombre = (p.nombre || '').toLowerCase()
-        const codigo = (p.codigo_barras || '').toLowerCase()
-        return (nombre.includes(q) || (codigo && codigo.includes(q)))
-            && (selectedCategory === 'all' || p.categoria_id === selectedCategory)
+        const q = String(search || '').toLowerCase()
+        const nombre = String(p.nombre || '').toLowerCase()
+        const codigo = String(p.codigo_barras || '').toLowerCase()
+        const catName = String(p.categoria || p.categoria_nombre || '').toUpperCase()
+        const selectedCatUpper = String(selectedCategory).toUpperCase()
+        
+        const matchesSearch = nombre.includes(q) || codigo.includes(q)
+        const matchesCategory = selectedCategory === 'all' || selectedCategory === 'TODAS' || catName === selectedCatUpper
+        
+        return matchesSearch && matchesCategory
     })
+
+    const getStockColor = (stock, stockMin = 5) => {
+        if (stock < 5 || stock < stockMin * 0.1) return '#ff3131'
+        if (stock < stockMin * 0.3) return '#ffc107'
+        return 'var(--s-neon)'
+    }
+
+    const formatPrice = (precioUsd, tasaBcv) => {
+        const precio = parseFloat(precioUsd) || 0
+        const tasa = parseFloat(tasaBcv) || TASA_BCV
+        const bs = precio * tasa
+        return {
+            usd: formatUSD(precio),
+            bs: formatBS(bs)
+        }
+    }
+
+    const producto = editForm;
+    let imageSrc = (producto.imagen_url?.startsWith('blob:') || producto.imagen_url?.startsWith('data:'))
+        ? producto.imagen_url
+        : getProductImageUrl(producto);
+
+    if (!imageSrc || imageSrc === DEFAULT_PRODUCT_IMAGE) {
+        imageSrc = defaultPlaceholderImg;
+    }
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--gap-3)', overflow: 'hidden', position: 'relative' }}>
+            <LoadingOverlay isVisible={isSaving || (loading && products.length === 0)} message={isSaving ? "Guardando..." : "Sincronizando..."} />
 
-            <LoadingOverlay isVisible={isSaving || (loading && products.length === 0)} message={isSaving ? "Guardando..." : "Sincronizando Inventario..."} />
-
-            {/* HEADER AREA */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--gap-3)', flexShrink: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h2 style={{ fontSize: '1.8rem', fontWeight: 1000, color: '#fff' }}>CENTRO DE INVENTARIO</h2>
                         <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--s-neon)', letterSpacing: '0.2em' }}>
-                            {filtered.length} PRODUCTOS EN VISTA
+                            {filtered.length} PRODUCTOS • GOOGLE SHEETS v8.0
                         </span>
                     </div>
                     <div style={{ display: 'flex', gap: 'var(--gap-2)' }}>
+                        <button className="s-btn s-btn-secondary" onClick={() => setShowImageLinker(true)} style={{ height: '3.5rem', padding: '0 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Image size={18} /> VINCULAR IMÁGENES
+                        </button>
                         <button className="s-btn s-btn-primary" onClick={() => setIsAddingCategory(true)} style={{ height: '3.5rem', padding: '0 2rem' }}>
-                            <Plus size={20} strokeWidth={3} />
-                            NUEVA CATEGORÍA
+                            <Plus size={20} strokeWidth={3} /> CATEGORÍA
                         </button>
                         <button className="s-btn s-btn-primary" onClick={handleNew} style={{ height: '3.5rem', padding: '0 2.5rem' }}>
-                            <Plus size={20} strokeWidth={3} />
-                            NUEVO PRODUCTO
+                            <Plus size={20} strokeWidth={3} /> PRODUCTO
                         </button>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 'var(--gap-2)', alignItems: 'center' }}>
-                    {/* Modern Category Dropdown */}
-                    <div className="s-custom-select" style={{ width: '18rem' }}>
-                        <div
-                            className="s-custom-select__trigger"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        >
-                            <Filter size={18} style={{ position: 'absolute', left: '1.2rem', color: 'var(--s-neon)' }} />
-                            <span>
-                                {selectedCategory === 'all'
-                                    ? 'TODAS LAS CATEGORÍAS'
-                                    : categories.find(c => c.id === selectedCategory)?.nombre.toUpperCase() || 'FILTRAR POR...'}
-                            </span>
-                            <ChevronRight size={18} style={{ transform: isDropdownOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
-                        </div>
+                    <CategoryDropdown
+                        categories={categories}
+                        products={products}
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={setSelectedCategory}
+                        onManageCategories={() => setShowCategoryManager(true)}
+                        isDropdownOpen={isDropdownOpen}
+                        setIsDropdownOpen={setIsDropdownOpen}
+                    />
 
-                        <AnimatePresence>
-                            {isDropdownOpen && (
-                                <motion.div
-                                    className="s-custom-select__options"
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                >
-                                    <div
-                                        className={`s-custom-select__option ${selectedCategory === 'all' ? 'active' : ''}`}
-                                        onClick={() => { setSelectedCategory('all'); setIsDropdownOpen(false); }}
-                                    >
-                                        <Layers size={16} />
-                                        TODAS LAS CATEGORÍAS
-                                    </div>
-                                    {categories.map(cat => (
-                                        <div
-                                            key={cat.id}
-                                            className={`s-custom-select__option ${selectedCategory === cat.id ? 'active' : ''}`}
-                                            onClick={() => { setSelectedCategory(cat.id); setIsDropdownOpen(false); }}
-                                        >
-                                            {getIcon(cat.nombre)}
-                                            {cat.nombre.toUpperCase()}
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="s-panel" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem', padding: '0 1.5rem', height: '3.8rem', borderColor: 'rgba(0, 230, 118, 0.2)', boxShadow: 'inset 0 0 20px rgba(0, 230, 118, 0.05)' }}>
-                        <Search size={22} style={{ color: 'var(--s-neon)', filter: 'drop-shadow(0 0 5px var(--s-neon-glow))' }} />
-                        <input
-                            className="s-input"
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                padding: 0,
-                                backdropFilter: 'none',
-                                fontSize: '1.2rem',
-                                color: 'var(--s-neon)',
-                                fontWeight: '800',
-                                textShadow: '0 0 10px rgba(0, 230, 118, 0.3)'
-                            }}
-                            placeholder="Escanee código o escriba nombre del producto... (F1)"
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                        />
-                        <div style={{ fontSize: '0.65rem', fontWeight: 1000, color: 'var(--s-neon)', padding: '0.4rem 0.8rem', background: 'rgba(0, 230, 118, 0.1)', borderRadius: '6px', border: '1px solid rgba(0, 230, 118, 0.2)' }}>F1</div>
+                    <div className="s-panel" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem', padding: '0 1.5rem', height: '3.8rem', borderColor: 'rgba(0, 230, 118, 0.2)' }}>
+                        <Search size={22} style={{ color: 'var(--s-neon)' }} />
+                        <input name="buscar" id="inventory-buscar" className="s-input" style={{ background: 'transparent', border: 'none', padding: 0, backdropFilter: 'none', fontSize: '1.2rem', color: 'var(--s-neon)', fontWeight: '800' }}
+                            placeholder="Buscar producto..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                 </div>
             </div>
 
-            {/* LIQUID LIST AREA */}
-            <div className="s-scroll" style={{ flex: 1, paddingRight: '1rem' }}>
-                <div className="s-liquid-header">
-                    <span />
-                    <span>PRODUCTO</span>
-                    <span>CATEGORÍA</span>
-                    <span style={{ textAlign: 'center' }}>STOCK ACTUAL</span>
-                    <span style={{ textAlign: 'right' }}>VALOR UNIT.</span>
-                    <span />
-                </div>
+            <div className="s-liquid-header" style={{ flexShrink: 0 }}>
+                <span /><span>PRODUCTO</span><span>DESCRIPCIÓN</span><span>CATEGORÍA</span>
+                <span style={{ textAlign: 'center' }}>STOCK</span><span style={{ textAlign: 'right' }}>COSTO</span><span style={{ textAlign: 'right' }}>PRECIO</span><span />
+            </div>
 
+            <div className="s-scroll" style={{ flex: 1, paddingRight: '1rem' }}>
                 <AnimatePresence mode="popLayout">
-                    <motion.div
-                        initial="hidden"
-                        animate="visible"
-                        className="s-liquid-list"
-                    >
+                    <motion.div initial="hidden" animate="visible" className="s-liquid-list">
                         {filtered.map((p, idx) => {
-                            const isLowStock = p.stock_actual <= (p.stock_minimo || 5)
-                            const catName = categories.find(c => c.id === p.categoria_id)?.nombre || '—'
-                            const pct = Math.min(100, (p.stock_actual / ((p.stock_minimo || 5) * 4)) * 100)
+                            const stockMin = parseInt(p.stock_minimo) || 5
+                            const stockActual = parseInt(p.stock) || 0
+                            const stockColor = getStockColor(stockActual, stockMin)
+                            const pct = Math.min(100, (stockActual / (stockMin * 4)) * 100)
+                            
+                            const catName = String(p.categoria || p.categoria_nombre || 'SIN CATEGORÍA')
+                            const cat = categories.find(c => c.nombre === catName)
+                            const prices = formatPrice(p.precio_usd, p.tasa_bcv)
+                            const unidadMed = String(p.unidad_medida || 'UNIDAD')
 
                             return (
-                                <motion.div
-                                    key={p.id}
-                                    layout
-                                    variants={{
-                                        hidden: { opacity: 0, x: -20 },
-                                        visible: {
-                                            opacity: 1, x: 0,
-                                            transition: { delay: idx * 0.04, duration: 0.3 }
-                                        }
-                                    }}
-                                    className="s-liquid-row"
-                                    onClick={() => handleEdit(p)}
-                                >
-                                    {/* Thumbnail */}
-                                    <div className="s-liquid-row__img">
-                                        {p.imagen_url ? (
-                                            <img src={p.imagen_url} alt={p.nombre} />
-                                        ) : (
-                                            <Package size={20} style={{ opacity: 0.1 }} />
-                                        )}
+                                <motion.div key={String(p.id) || idx} layout variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0, transition: { delay: idx * 0.04 } } }}
+                                    className="s-liquid-row" onClick={() => handleEdit(p)}>
+                                    <div className="s-liquid-row__img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <img 
+                                            src={getProductImageUrl(p)} 
+                                            alt={String(p.nombre || '')} 
+                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }} 
+                                            onError={(e) => { e.target.src = defaultPlaceholderImg }} 
+                                        />
                                     </div>
-
-                                    {/* Info */}
                                     <div className="s-liquid-row__info">
-                                        <h4>{p.nombre.toUpperCase()}</h4>
-                                        <p>{p.codigo_barras || 'SIN SKU'}</p>
+                                        <h4>{String(p.nombre || '').toUpperCase()}</h4>
+                                        <p>{String(p.codigo_barras || 'SIN SKU')}</p>
                                     </div>
-
-                                    {/* Category */}
                                     <div>
-                                        <span className="s-badge s-badge-neon">{catName}</span>
+                                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>
+                                            {String(p.descripcion_corta || '—').toUpperCase()}
+                                        </span>
                                     </div>
-
-                                    {/* Stock Barra */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                        <div style={{ color: cat?.icono_nombre ? 'var(--s-neon)' : 'var(--s-text-dim)' }}>
+                                            {getIcon(cat?.nombre, cat?.icono_nombre)}
+                                        </div>
+                                        <span className="s-badge s-badge-neon" style={{ fontSize: '0.6rem' }}>
+                                            {catName}
+                                        </span>
+                                    </div>
                                     <div className="s-liquid-row__stock-bar">
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 1000 }}>
-                                            <span style={{ color: isLowStock ? '#ff9100' : 'var(--s-neon)' }}>{p.stock_actual} DISPONIBLES</span>
-                                            <span style={{ opacity: 0.3 }}>{p.unidad_medida}</span>
-                                        </div>
+                                        <span style={{ color: '#fff', fontSize: '0.7rem' }}>
+                                            {stockActual} {unidadMed.toUpperCase()}
+                                        </span>
                                         <div className="s-liquid-row__bar-track">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${pct}%` }}
-                                                className="s-liquid-row__bar-fill"
-                                                style={{
-                                                    background: isLowStock ? '#ff9100' : 'var(--s-neon)',
-                                                    boxShadow: isLowStock ? 'none' : '0 0 10px var(--s-neon-glow)'
-                                                }}
-                                            />
+                                            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="s-liquid-row__bar-fill" style={{ background: stockColor }} />
                                         </div>
                                     </div>
-
-                                    {/* Price */}
-                                    <div className="s-liquid-row__price">
-                                        ${(p.precio_venta_usd || 0).toFixed(2)}
+                                    <div className="s-liquid-row__price" style={{ color: '#fff', opacity: 0.8 }}>
+                                        ${parseFloat(p.precio_costo || 0).toFixed(2)}
                                     </div>
-
-                                    {/* Actions */}
+                                    <div className="s-liquid-row__price">
+                                        ${prices.usd}
+                                        <span style={{ display: 'block', fontSize: '0.55rem', color: '#888' }}>{prices.bs} BS</span>
+                                    </div>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                        <button className="s-btn s-btn-secondary s-btn-icon" style={{ borderRadius: '8px' }}>
+                                        <button className="s-btn s-btn-secondary s-btn-icon" onClick={e => { e.stopPropagation(); handleEdit(p); }}>
                                             <Edit2 size={16} />
                                         </button>
                                     </div>
@@ -485,257 +586,230 @@ const Inventory = () => {
                 )}
             </div>
 
-            {/* CRYSTAL MODAL (Drawer refactored as Center Modal) */}
             <AnimatePresence>
                 {editingId && (
                     <div className="s-overlay" style={{ padding: '0.5rem' }}>
-                        <motion.div
-                            className="s-overlay__backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setEditingId(null)}
-                        />
-                        <motion.div
-                            className="s-modal s-modal--crystal"
-                            initial={{ scale: 0.9, opacity: 0, y: 40 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 40 }}
-                            style={{ width: 'min(46rem, 98vw)', maxHeight: '98vh' }}
-                        >
+                        <motion.div className="s-overlay__backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingId(null)} />
+                        <motion.div className="s-modal s-modal--crystal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ width: 'min(46rem, 98vw)' }}>
                             <div className="s-modal__header" style={{ padding: '0.875rem 1.5rem' }}>
                                 <div>
                                     <h2 style={{ fontSize: '1.2rem', fontWeight: 1000, color: '#fff' }}>
                                         {isAdding ? 'REGISTRO DE PRODUCTO' : 'GESTIÓN DE PRODUCTO'}
                                     </h2>
-                                    <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--s-neon)', letterSpacing: '0.12em' }}>
-                                        NIVEL DE ACCESO: ADMIN MASTER
-                                    </span>
+                                    <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--s-neon)' }}>GOOGLE SHEETS v8.0</span>
                                 </div>
-                                <button className="s-btn s-btn-secondary s-btn-icon" onClick={() => setEditingId(null)} style={{ border: 'none', width: '2rem', height: '2rem' }}>
+                                <button className="s-btn s-btn-secondary s-btn-icon" onClick={() => { setEditingId(null); setEditForm({}); }}>
                                     <X size={18} />
                                 </button>
                             </div>
 
-                            <div className="s-modal__body" style={{ padding: '1rem 1.5rem', gap: '0.875rem', overflow: 'visible' }}>
-
-                                {/* Sección Imagen: Interactiva y Compactada */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
-                                    <label className="s-modal__img-preview" style={{ width: '80px', height: '80px', flexShrink: 0, borderRadius: '12px', position: 'relative' }} title="Haga clic para subir foto">
-                                        <input type="file" hidden accept="image/*" onChange={handleImageChange} />
-                                        {editForm.imagen_url ? (
-                                            <img src={editForm.imagen_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div className="s-modal__body" style={{ padding: '1rem 1.5rem', gap: '0.875rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                                    <label className="s-modal__img-preview" style={{ width: '100px', height: '100px', cursor: 'pointer', position: 'relative' }}>
+                                        <input type="file" hidden accept="image/*" onChange={handleImageChange} disabled={editForm._uploadingImage} />
+                                        {(editForm._uploadingImage || isUploadingImage) ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0.5rem', background: 'rgba(0,0,0,0.8)', borderRadius: '12px' }}>
+                                                <Loader size={28} style={{ color: 'var(--s-neon)', animation: 'spin 1s linear infinite' }} />
+                                                <span style={{ fontSize: '0.55rem', color: 'var(--s-neon)', textAlign: 'center' }}>
+                                                    {editForm._uploadProgress || 'SUBIENDO...'}
+                                                </span>
+                                            </div>
                                         ) : (
-                                            <Camera size={28} style={{ color: '#fff', filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' }} />
+                                            <>
+                                                <img 
+                                                    src={imageSrc} 
+                                                    alt={producto.nombre || "Nuevo Producto"} 
+                                                    onError={(e) => {
+                                                        e.target.onerror = null; 
+                                                        e.target.src = defaultPlaceholderImg;
+                                                    }}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
+                                                    className="object-cover w-full h-full rounded"
+                                                />
+                                                {editForm._imageBase64 && (
+                                                    <div style={{ position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,230,118,0.2)', border: '1px solid var(--s-neon)', borderRadius: '4px', padding: '2px 8px', fontSize: '0.5rem', color: 'var(--s-neon)', whiteSpace: 'nowrap', fontWeight: 'bold', textShadow: '0 0 5px var(--s-neon)' }}>
+                                                        NUEVA IMAGEN
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </label>
-
-                                    {editForm.imagen_url && (
-                                        <button
-                                            className="s-btn s-btn-secondary s-btn-icon"
-                                            onClick={(e) => { e.preventDefault(); setEditForm(prev => ({ ...prev, imagen_url: null })); setImageFile(null); }}
-                                            style={{ color: '#ff3131', borderColor: 'rgba(255,49,49,0.5)', width: '2.5rem', height: '2.5rem', boxShadow: '0 0 8px rgba(255,49,49,0.2)' }}
-                                            title="Eliminar Foto"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
+                                    <span style={{ fontSize: '0.6rem', color: 'var(--s-text-dim)' }}>Click para seleccionar imagen</span>
                                 </div>
 
-                                {/* Fila 1: Nombre + Categoría */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
                                     <div className="s-field">
-                                        <label style={{ color: '#fff' }}>NOMBRE COMERCIAL</label>
-                                        <input
-                                            className={`s-input ${formErrors.includes('nombre') ? 's-input--error' : ''}`}
-                                            placeholder="Ingrese el nombre del producto"
-                                            value={editForm.nombre || ''}
-                                            onChange={e => {
-                                                setEditForm({ ...editForm, nombre: e.target.value })
-                                                if (formErrors.includes('nombre')) setFormErrors(formErrors.filter(err => err !== 'nombre'))
-                                            }}
+                                        <label style={{ color: '#fff' }}>NOMBRE</label>
+                                        <input 
+                                            name="nombre"
+                                            id="producto-nombre"
+                                            className={`s-input ${formErrors.includes('nombre') ? 's-input--error' : ''}`} 
+                                            value={editForm.nombre || ''} 
+                                            onChange={e => setEditForm({ ...editForm, nombre: e.target.value })} 
                                         />
                                     </div>
                                     <div className="s-field">
                                         <label style={{ color: '#fff' }}>CATEGORÍA</label>
-                                        <select className="s-select" value={editForm.categoria_id || ''} onChange={e => setEditForm({ ...editForm, categoria_id: e.target.value })}>
-                                            {categories.map(c => <option key={c.id} value={c.id}>{c.nombre.toUpperCase()}</option>)}
+                                        <select 
+                                            name="categoria"
+                                            id="producto-categoria"
+                                            className="s-select" 
+                                            value={editForm.categoria_id || ''} 
+                                            onChange={e => {
+                                                const cat = categories.find(c => c.id === e.target.value)
+                                                setEditForm({ 
+                                                    ...editForm, 
+                                                    categoria_id: e.target.value,
+                                                    categoria: cat?.nombre || '',
+                                                    categoria_nombre: cat?.nombre || ''
+                                                })
+                                            }}
+                                            style={{ flex: 1 }}
+                                        >
+                                            <option value="">-- SELECCIONAR --</option>
+                                            {categories.filter(c => c.id !== 'all').map(c => (
+                                                <option key={String(c.id)} value={String(c.id)}>
+                                                    {String(c.nombre || '').toUpperCase()}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
 
-                                {/* Nueva Fila: Descripción Corta */}
                                 <div className="s-field">
-                                    <label style={{ color: '#fff' }}>DESCRIPCIÓN CORTA</label>
-                                    <input
-                                        className="s-input"
-                                        placeholder="Ingrese descripción"
-                                        value={editForm.descripcion_corta || ''}
-                                        onChange={e => setEditForm({ ...editForm, descripcion_corta: e.target.value })}
+                                    <label style={{ color: '#fff' }}>DESCRIPCIÓN</label>
+                                    <input 
+                                        name="descripcion"
+                                        id="producto-descripcion"
+                                        className="s-input" 
+                                        value={editForm.descripcion_corta || ''} 
+                                        onChange={e => setEditForm({ ...editForm, descripcion_corta: e.target.value })} 
                                     />
                                 </div>
 
-                                {/* Fila 2: Costo + Precio Venta */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                                    <div className="s-field">
+                                        <label style={{ color: '#fff' }}>PRECIO (USD)</label>
+                                        <CurrencyInput
+                                            currency="USD"
+                                            name="precio_usd"
+                                            id="producto-precio"
+                                            value={editForm.precio_usd}
+                                            onChange={v => setEditForm({ ...editForm, precio_usd: v })}
+                                            color="#00e676"
+                                            style={{ textAlign: 'center', fontSize: '1.2rem' }}
+                                        />
+                                    </div>
                                     <div className="s-field">
                                         <label style={{ color: '#fff' }}>COSTO (USD)</label>
-                                        <input
-                                            className={`s-input s-input--neon ${formErrors.includes('precio_costo') ? 's-input--error' : ''}`}
-                                            type="number" step="0.01" min="0" placeholder="0.00"
-                                            value={editForm.precio_costo ?? ''}
-                                            onChange={e => {
-                                                setEditForm({ ...editForm, precio_costo: e.target.value })
-                                                if (formErrors.includes('precio_costo')) setFormErrors(formErrors.filter(err => err !== 'precio_costo'))
-                                            }}
+                                        <CurrencyInput
+                                            currency="USD"
+                                            name="precio_costo"
+                                            id="producto-costo"
+                                            value={editForm.precio_costo}
+                                            onChange={v => setEditForm({ ...editForm, precio_costo: v })}
                                             style={{ textAlign: 'center' }}
                                         />
                                     </div>
                                     <div className="s-field">
-                                        <label style={{ color: '#fff' }}>PRECIO VENTA (USD)</label>
-                                        <input
-                                            className={`s-input s-input--neon ${formErrors.includes('precio_unitario') ? 's-input--error' : ''}`}
-                                            type="number" step="0.01" min="0" placeholder="0.00"
-                                            value={editForm.precio_unitario ?? ''}
-                                            onChange={e => {
-                                                setEditForm({ ...editForm, precio_unitario: e.target.value })
-                                                if (formErrors.includes('precio_unitario')) setFormErrors(formErrors.filter(err => err !== 'precio_unitario'))
-                                            }}
+                                        <label style={{ color: '#fff' }}>TASA BCV</label>
+                                        <CurrencyInput
+                                            currency="USD"
+                                            name="tasa_bcv"
+                                            id="producto-tasa"
+                                            value={editForm.tasa_bcv ?? ''}
+                                            onChange={v => setEditForm({ ...editForm, tasa_bcv: v })}
                                             style={{ textAlign: 'center' }}
                                         />
                                     </div>
                                 </div>
 
-                                {/* Fila 3: Existencia, Unidades y Medida en 3 columnas proporcionales */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', alignItems: 'end' }}>
-                                    {/* Existencia en Tienda */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                                     <div className="s-field">
                                         <label style={{ color: '#fff' }}>STOCK</label>
-                                        <input
-                                            className={`s-input ${formErrors.includes('stock_actual') ? 's-input--error' : ''}`}
-                                            type="number" min="0" step="1"
-                                            value={editForm.stock_actual ?? 0}
-                                            onChange={e => {
-                                                setEditForm({ ...editForm, stock_actual: e.target.value })
-                                                if (formErrors.includes('stock_actual')) setFormErrors(formErrors.filter(err => err !== 'stock_actual'))
-                                            }}
-                                            style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 900, color: 'var(--s-neon)', height: '3.8rem' }}
+                                        <input 
+                                            name="stock"
+                                            id="producto-stock"
+                                            className="s-input" 
+                                            type="number" 
+                                            value={editForm.stock ?? 0} 
+                                            onChange={e => setEditForm({ ...editForm, stock: e.target.value })} 
+                                            style={{ textAlign: 'center', fontSize: '1.2rem', color: 'var(--s-neon)' }}
                                         />
                                     </div>
-
-                                    {/* Número de unidades */}
                                     <div className="s-field">
                                         <label style={{ color: '#fff' }}>NÚMERO UNID.</label>
-                                        <input
-                                            className={`s-input ${formErrors.includes('numero_unidades') ? 's-input--error' : ''}`}
-                                            type="number" min="0" step="0.01"
-                                            value={editForm.numero_unidades ?? 1}
-                                            onChange={e => {
-                                                setEditForm({ ...editForm, numero_unidades: e.target.value })
-                                                if (formErrors.includes('numero_unidades')) setFormErrors(formErrors.filter(err => err !== 'numero_unidades'))
-                                            }}
-                                            style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 900, color: '#fff', height: '3.8rem' }}
+                                        <input 
+                                            name="numero_unid"
+                                            id="producto-numero"
+                                            className="s-input" 
+                                            type="number" 
+                                            value={editForm.numero_unid ?? 1} 
+                                            onChange={e => setEditForm({ ...editForm, numero_unid: e.target.value })} 
+                                            style={{ textAlign: 'center' }}
                                         />
                                     </div>
-
-                                    {/* Unidad de medida */}
                                     <div className="s-field">
                                         <label style={{ color: '#fff' }}>UNIDAD MED.</label>
-                                        <select
-                                            className={`s-select ${formErrors.includes('unidad_medida') ? 's-input--error' : ''}`}
-                                            value={editForm.unidad_medida || 'UNIDAD'}
-                                            onChange={e => {
-                                                setEditForm({ ...editForm, unidad_medida: e.target.value })
-                                                if (formErrors.includes('unidad_medida')) setFormErrors(formErrors.filter(err => err !== 'unidad_medida'))
-                                            }}
-                                            style={{ height: '3.8rem', fontSize: '1rem', fontWeight: 800 }}
+                                        <select 
+                                            name="unidad_medida"
+                                            id="producto-unidad"
+                                            className="s-select" 
+                                            value={editForm.unidad_medida || 'UNIDAD'} 
+                                            onChange={e => setEditForm({ ...editForm, unidad_medida: e.target.value })}
                                         >
                                             <option value="UNIDAD">UNIDAD</option>
                                             <option value="KILOGRAMO">KILOGRAMO</option>
                                             <option value="GRAMO">GRAMO</option>
                                             <option value="LITRO">LITRO</option>
                                             <option value="MILILITRO">MILILITRO</option>
-                                            <option value="BULTO">BULTO</option>
                                             <option value="PAQUETE">PAQUETE</option>
                                             <option value="CAJA">CAJA</option>
-                                            <option value="SACO">SACO</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                {/* Fila 5: Código / SKU */}
-                                <div className="s-field">
-                                    <label style={{ color: '#fff' }}>CÓDIGO DE BARRAS / SKU</label>
-                                    <input
-                                        className={`s-input ${formErrors.includes('codigo_barras') ? 's-input--error' : ''}`}
-                                        placeholder="Opcional"
-                                        value={editForm.codigo_barras || ''}
-                                        onChange={e => {
-                                            setEditForm({ ...editForm, codigo_barras: e.target.value })
-                                            if (formErrors.includes('codigo_barras')) setFormErrors(formErrors.filter(err => err !== 'codigo_barras'))
-                                        }}
-                                    />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                    <div className="s-field">
+                                        <label style={{ color: '#fff' }}>STOCK MÍNIMO</label>
+                                        <input 
+                                            name="stock_minimo"
+                                            id="producto-stock-min"
+                                            className="s-input" 
+                                            type="number" 
+                                            value={editForm.stock_minimo ?? 5} 
+                                            onChange={e => setEditForm({ ...editForm, stock_minimo: e.target.value })} 
+                                            style={{ textAlign: 'center' }}
+                                        />
+                                    </div>
+                                    <div className="s-field">
+                                        <label style={{ color: '#fff' }}>CÓDIGO / SKU</label>
+                                        <input 
+                                            name="codigo_barras"
+                                            id="producto-sku"
+                                            className="s-input" 
+                                            value={editForm.codigo_barras || ''} 
+                                            onChange={e => setEditForm({ ...editForm, codigo_barras: e.target.value })} 
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="s-modal__footer" style={{ display: 'flex', gap: '0.75rem', padding: '0.875rem 1.5rem' }}>
                                 {!isAdding && (
-                                    <button
-                                        className="s-btn s-btn-secondary"
-                                        onClick={() => deleteProduct(editingId, editForm.nombre)}
-                                        style={{ width: '3rem', height: '3rem', padding: 0, color: '#ff3131', borderColor: 'rgba(255,49,49,0.3)' }}
+                                    <button 
+                                        className="s-btn s-btn-secondary" 
+                                        onClick={() => deleteProduct(editingId, editForm.nombre)} 
+                                        style={{ width: '3rem', color: '#ff3131', borderColor: 'rgba(255,49,49,0.3)' }}
                                     >
-                                        <Trash2 size={20} />
+                                        <Trash2 size={18} />
                                     </button>
                                 )}
-                                <button className="s-btn s-btn-primary" onClick={saveEdit} style={{ flex: 1, height: '3rem', fontSize: '0.85rem' }}>
-                                    {isAdding ? 'REGISTRAR EN BASE DE DATOS' : 'CONFIRMAR ACTUALIZACIÓN'}
+                                <button className="s-btn s-btn-secondary" onClick={() => setEditingId(null)} style={{ flex: 1 }}>
+                                    CANCELAR
                                 </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-            {/* CATEGORY MODAL */}
-            <AnimatePresence>
-                {isAddingCategory && (
-                    <div className="s-overlay">
-                        <motion.div
-                            className="s-overlay__backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsAddingCategory(false)}
-                        />
-                        <motion.div
-                            className="s-modal s-modal--crystal"
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            style={{ width: '28rem' }}
-                        >
-                            <div className="s-modal__header">
-                                <div>
-                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 1000, color: '#fff' }}>NUEVA CATEGORÍA</h2>
-                                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--s-neon)', letterSpacing: '0.1em' }}>SISTEMA DE CLASIFICACIÓN</span>
-                                </div>
-                                <button className="s-btn s-btn-secondary s-btn-icon" onClick={() => setIsAddingCategory(false)} style={{ border: 'none' }}><X size={20} /></button>
-                            </div>
-                            <div className="s-modal__body">
-                                <div className="s-field">
-                                    <label style={{ color: '#fff' }}>NOMBRE DE LA CATEGORÍA</label>
-                                    <input
-                                        className="s-input"
-                                        autoFocus
-                                        value={newCategoryName}
-                                        onChange={e => setNewCategoryName(e.target.value)}
-                                        placeholder="Ej. Bebidas Energéticas"
-                                        onKeyDown={e => e.key === 'Enter' && saveCategory()}
-                                    />
-                                </div>
-                            </div>
-                            <div className="s-modal__footer">
-                                <button className="s-btn s-btn-primary" onClick={saveCategory} style={{ width: '100%', height: '3.5rem' }}>
-                                    CREAR CATEGORÍA
+                                <button className="s-btn s-btn-primary" onClick={saveEdit} disabled={isSaving} style={{ flex: 1 }}>
+                                    {isSaving ? <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> : 'GUARDAR'}
                                 </button>
                             </div>
                         </motion.div>
@@ -743,51 +817,59 @@ const Inventory = () => {
                 )}
             </AnimatePresence>
 
-            {/* DELETE CONFIRMATION MODAL */}
             <AnimatePresence>
-                {productToDelete && (
-                    <div className="s-overlay">
-                        <motion.div
-                            className="s-overlay__backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setProductToDelete(null)}
-                        />
-                        <motion.div
-                            className="s-modal s-modal--crystal"
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            style={{ width: '28rem', border: '1px solid rgba(255, 49, 49, 0.4)', boxShadow: '0 0 20px rgba(255, 49, 49, 0.15)' }}
-                        >
-                            <div className="s-modal__header" style={{ borderBottomColor: 'rgba(255,49,49,0.2)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <AlertTriangle size={24} style={{ color: '#ff3131', filter: 'drop-shadow(0 0 8px rgba(255,49,49,0.6))' }} />
-                                    <h2 style={{ fontSize: '1.2rem', fontWeight: 1000, color: '#ff3131', filter: 'drop-shadow(0 0 5px rgba(255,49,49,0.4))' }}>ELIMINAR PRODUCTO</h2>
-                                </div>
-                                <button className="s-btn s-btn-secondary s-btn-icon" onClick={() => setProductToDelete(null)} style={{ border: 'none' }}>
+                {isAddingCategory && (
+                    <div className="s-overlay" style={{ padding: '0.5rem' }}>
+                        <motion.div className="s-overlay__backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsAddingCategory(false)} />
+                        <motion.div className="s-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ width: 'min(36rem, 98vw)' }}>
+                            <div className="s-modal__header">
+                                <h2 style={{ fontSize: '1rem', fontWeight: 1000, color: '#fff' }}>NUEVA CATEGORÍA</h2>
+                                <button className="s-btn s-btn-secondary s-btn-icon" onClick={() => setIsAddingCategory(false)}>
                                     <X size={18} />
                                 </button>
                             </div>
-                            <div className="s-modal__body" style={{ padding: '1.5rem', textAlign: 'center' }}>
-                                <p style={{ color: 'var(--s-text-primary)' }}>¿Estás seguro de que deseas eliminar permanentemente el producto <strong>{productToDelete.name}</strong>?</p>
-                                <p style={{ color: 'var(--s-text-dim)', fontSize: '0.85rem', marginTop: '0.75rem' }}>Esta acción no se puede deshacer y borrará permanentemente todo su historial de inventario y lotes relacionados.</p>
+                            <div className="s-modal__body">
+                                <div className="s-field">
+                                    <label style={{ color: '#fff' }}>NOMBRE</label>
+                                    <input name="categoria" id="inventory-nueva-categoria" className="s-input" value={categoryName} onChange={e => setCategoryName(e.target.value)} placeholder="EJ: ALIMENTOS" />
+                                </div>
+                                <div className="s-field">
+                                    <label style={{ color: '#fff' }}>ICONO</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                        {Object.keys(CATEGORY_ICONS).slice(0, 12).map(iconName => {
+                                            const IconComp = CATEGORY_ICONS[iconName]
+                                            return (
+                                                <button
+                                                    key={iconName}
+                                                    onClick={() => setSelectedIcon(iconName)}
+                                                    style={{
+                                                        width: '2.5rem', height: '2.5rem', borderRadius: '8px',
+                                                        background: selectedIcon === iconName ? 'rgba(0,230,118,0.2)' : 'rgba(255,255,255,0.05)',
+                                                        border: selectedIcon === iconName ? '1px solid var(--s-neon)' : '1px solid transparent',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        cursor: 'pointer', color: selectedIcon === iconName ? 'var(--s-neon)' : '#888'
+                                                    }}
+                                                >
+                                                    <IconComp size={18} />
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="s-modal__footer" style={{ borderTopColor: 'rgba(255,49,49,0.2)' }}>
-                                <button className="s-btn s-btn-secondary" onClick={() => setProductToDelete(null)}>CANCELAR</button>
-                                <button
-                                    className="s-btn"
-                                    onClick={confirmDeleteProduct}
-                                    style={{ background: 'rgba(255,49,49,0.15)', color: '#ff3131', borderColor: '#ff3131', boxShadow: '0 0 10px rgba(255,49,49,0.3)', fontWeight: 800 }}
-                                >
-                                    {isSaving ? 'ELIMINANDO...' : 'SÍ, ELIMINAR PRODUCTO'}
+                            <div className="s-modal__footer">
+                                <button className="s-btn s-btn-secondary" onClick={() => setIsAddingCategory(false)} style={{ flex: 1 }}>CANCELAR</button>
+                                <button className="s-btn s-btn-primary" onClick={handleCategoryAction} disabled={isSaving} style={{ flex: 1 }}>
+                                    {isSaving ? <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> : 'CREAR'}
                                 </button>
                             </div>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
+
+            {showImageLinker && <ImageLinker onClose={() => setShowImageLinker(false)} />}
+            {showCategoryManager && <CategoryManager onClose={() => setShowCategoryManager(false)} />}
         </div>
     )
 }

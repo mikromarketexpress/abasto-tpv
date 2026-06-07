@@ -30,10 +30,25 @@ const CajaModal = ({ type, onClose, onSessionUpdate }) => {
 
     useEffect(() => {
         if (isAbrir) {
-            const tasaActual = gsService.getTasaBcv()
-            if (tasaActual > 0) {
-                setTasaBcv(String(tasaActual))
+            const fetchTasaBCV = async () => {
+                try {
+                    const result = await gsService.fetchAndUpdateTasaBcv()
+                    if (result?.success && result.data?.tasa_bcv > 0) {
+                        setTasaBcv(Number(result.data.tasa_bcv).toFixed(2))
+                    } else {
+                        const tasaCache = gsService.getTasaBcv()
+                        if (tasaCache > 0) {
+                            setTasaBcv(Number(tasaCache).toFixed(2))
+                        }
+                    }
+                } catch (e) {
+                    const tasaCache = gsService.getTasaBcv()
+                    if (tasaCache > 0) {
+                        setTasaBcv(Number(tasaCache).toFixed(2))
+                    }
+                }
             }
+            fetchTasaBCV()
         }
     }, [isAbrir])
 
@@ -60,18 +75,34 @@ const CajaModal = ({ type, onClose, onSessionUpdate }) => {
 
         try {
             if (isAbrir) {
+                // PRIMERO: Sincronizar tasa BCV automáticamente antes de abrir caja
+                setLoading(true)
+                setError(null)
+                
+                let tasaFinal = numTasa
+                try {
+                    const tasaResult = await gsService.fetchAndUpdateTasaBcv()
+                    if (tasaResult?.success && tasaResult.data?.tasa_bcv > 0) {
+                        tasaFinal = tasaResult.data.tasa_bcv
+                        console.log('[Caja] Tasa BCV sincronizada automáticamente:', tasaFinal)
+                    } else {
+                        console.log('[Caja] No se pudo sincronizar tasa BCV, usando valor manual:', numTasa)
+                    }
+                } catch (e) {
+                    console.log('[Caja] Error sincronizando tasa BCV, usando valor manual:', numTasa)
+                }
+                
                 const sesionId = generateSesionId()
                 const sesionObj = {
                     id: sesionId,
                     fecha_apertura: new Date().toISOString(),
                     apertura_usd: numUSD,
                     apertura_bs: numBS,
-                    tasa_bcv_apertura: numTasa,
+                    tasa_bcv_apertura: tasaFinal,
                     estado: 'ACTIVA'
                 }
                 await gsService.abrirSesionCaja(sesionObj)
-                setTasaBCV(numTasa)
-                await gsService.updateTasaBCV(numTasa)
+                setTasaBCV(tasaFinal)
                 onSessionUpdate(sesionObj)
                 onClose()
             } else {
@@ -102,7 +133,6 @@ const CajaModal = ({ type, onClose, onSessionUpdate }) => {
                         cierre_transferencia: totalsSistema.transferencia,
                         observaciones: observaciones
                     })
-                    await gsService.updateTasaBCV(0)
                     setTasaBCV(0)
                 }
                 onSessionUpdate(null)
@@ -122,23 +152,22 @@ const CajaModal = ({ type, onClose, onSessionUpdate }) => {
     const sesiones = gsService.getTable('Caja')
     const sesionActiva = sesiones.find(s => s.estado === 'ACTIVA')
     const ventas = gsService.getTable('Ventas').filter(v => v.sesion_caja_id === sesionActiva?.id)
-    const totalVentas = ventas.reduce((sum, v) => sum + (Number(v.total_venta_usd) || 0), 0)
-    const totalVentasBS = ventas.reduce((s, v) => s + (Number(v.total_bs) || 0), 0)
-    const totalItemsVendidos = ventas.reduce((s, v) => {
-        const prods = typeof v.productos_json === 'string' ? JSON.parse(v.productos_json || '[]') : (v.productos || [])
-        return s + prods.reduce((acc, p) => acc + (Number(p.cantidad) || 0), 0)
-    }, 0)
 
-    const totalsSistema = useMemo(() => {
-        const result = { debito: 0, pago_movil: 0, bio_pago: 0, transferencia: 0 }
-        ventas.forEach(v => {
-            result.debito += Number(v.pago_debito) || 0
-            result.pago_movil += Number(v.pago_pago_movil) || 0
-            result.bio_pago += Number(v.pago_bio_pago) || 0
-            result.transferencia += Number(v.pago_transferencia) || 0
-        })
-        return result
-    }, [ventas])
+    const totalVentas = ventas.reduce((sum, v) => sum + (Number(v.total_venta_usd) || 0), 0)
+    const totalVentasBS = ventas.reduce((sum, v) => sum + (Number(v.total_bs) || 0), 0)
+    const totalItemsVendidos = ventas.reduce((sum, v) => {
+        try {
+            const prods = typeof v.productos_json === 'string' ? JSON.parse(v.productos_json) : v.productos_json
+            return sum + (prods || []).reduce((s, p) => s + (Number(p.cantidad) || 0), 0)
+        } catch { return sum }
+    }, 0)
+    const totalsSistema = ventas.reduce((acc, v) => {
+        acc.debito += Number(v.pago_debito) || 0
+        acc.pago_movil += Number(v.pago_pago_movil) || 0
+        acc.bio_pago += Number(v.pago_bio_pago) || 0
+        acc.transferencia += Number(v.pago_transferencia) || 0
+        return acc
+    }, { debito: 0, pago_movil: 0, bio_pago: 0, transferencia: 0 })
 
     const accentColor = isAbrir ? 'var(--s-neon)' : '#ff5252'
 
@@ -243,10 +272,42 @@ const CajaModal = ({ type, onClose, onSessionUpdate }) => {
 
                         {isAbrir && (
                             <div>
-                                <label className="s-section-label">TASA BCV</label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                    <label className="s-section-label">TASA BCV</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const fetchTasa = async () => {
+                                                try {
+                                                    const result = await gsService.fetchAndUpdateTasaBcv()
+                                                    if (result?.tasaBCV && result.tasaBCV > 0) {
+                                                        setTasaBcv(Number(result.tasaBCV).toFixed(2))
+                                                    }
+                                                } catch (e) {}
+                                            }
+                                            fetchTasa()
+                                        }}
+                                        style={{
+                                            background: 'none',
+                                            border: '1px solid var(--s-neon)',
+                                            color: 'var(--s-neon)',
+                                            fontSize: '0.6rem',
+                                            fontWeight: 800,
+                                            padding: '0.2rem 0.5rem',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                        }}
+                                        title="Actualizar tasa BCV"
+                                    >
+                                        ↻ ACTUALIZAR
+                                    </button>
+                                </div>
                                 <div style={{ position: 'relative', marginTop: '0.5rem' }}>
                                     <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--s-neon)', fontWeight: 900 }}>BS</div>
-                                    <CurrencyInput currency="USD" name="tasa_bcv" id="caja-tasa" value={tasaBcv} onChange={v => setTasaBcv(String(v))} placeholder="Tasa actual" color="var(--s-neon)" style={{ paddingLeft: '3rem', fontSize: '1.2rem', height: '4rem', fontWeight: 900, textAlign: 'center' }} />
+                                    <CurrencyInput currency="USD" name="tasa_bcv" id="caja-tasa" value={tasaBcv} onChange={v => setTasaBcv(parseFloat(v).toFixed(2))} placeholder="Tasa actual" color="var(--s-neon)" style={{ paddingLeft: '3rem', fontSize: '1.2rem', height: '4rem', fontWeight: 900, textAlign: 'center' }} />
+                                </div>
+                                <div style={{ fontSize: '0.55rem', color: 'var(--s-text-dim)', textAlign: 'center', marginTop: '0.25rem' }}>
+                                    (Valor obtenido automáticamente del BCV - editable)
                                 </div>
                             </div>
                         )}

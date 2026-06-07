@@ -37,10 +37,20 @@ export const CajaProvider = ({ children }) => {
                     }
                 }
 
+                // Obtener tasa del cache o intentar sincronizar
                 const tasaDb = gsService.tasaBcv || gsService.getTasaBcv() || 0
                 if (tasaDb > 0) {
                     setTasaBCV(tasaDb)
                     localStorage.setItem('mme_tasa_bcv', tasaDb.toString())
+                } else {
+                    // Intentar sincronizar tasa BCV automáticamente
+                    try {
+                        const tasaSync = await gsService.fetchAndUpdateTasaBcv()
+                        if (tasaSync?.success && tasaSync.data?.tasa_bcv > 0) {
+                            setTasaBCV(tasaSync.data.tasa_bcv)
+                            localStorage.setItem('mme_tasa_bcv', String(tasaSync.data.tasa_bcv))
+                        }
+                    } catch (e) {}
                 }
             } catch(err) {
                 console.error('Error loading sesion:', err)

@@ -185,7 +185,7 @@ const CategoryManager = ({ isOpen, onClose, products = [], onToast }) => {
             }
 
             // Recargar categorías desde el servicio
-            const nuevasCategorias = loadCategories();
+            const nuevasCategorias = await loadCategories();
             setCategories(nuevasCategorias);
             
             setEditingId(null);
@@ -231,8 +231,8 @@ const CategoryManager = ({ isOpen, onClose, products = [], onToast }) => {
             }
 
             await gsService.delete('Categorias', cat?.id);
-
-            setCategories(loadCategories());
+            const nuevasCategorias = await loadCategories();
+            setCategories(nuevasCategorias);
             onToast?.('CATEGORÍA ELIMINADA', 'success');
 
         } catch (err) {
@@ -283,7 +283,7 @@ const CategoryManager = ({ isOpen, onClose, products = [], onToast }) => {
                 throw new Error('Error al crear');
             }
 
-            const categoriasDelServidor = result.categorias || loadCategories();
+            const categoriasDelServidor = result.categorias || await loadCategories();
             setCategories(categoriasDelServidor);
             
             setNewCategoryName('');
@@ -419,7 +419,8 @@ const CategoryManager = ({ isOpen, onClose, products = [], onToast }) => {
                                                         background: newCategoryIcon.name === opt.name ? 'rgba(0,230,118,0.2)' : 'rgba(255,255,255,0.03)',
                                                         border: newCategoryIcon.name === opt.name ? '2px solid var(--s-neon)' : '1px solid rgba(255,255,255,0.08)',
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        cursor: 'pointer', transition: 'all 0.2s'
+                                                        cursor: 'pointer', transition: 'all 0.2s',
+                                                        color: newCategoryIcon.name === opt.name ? 'var(--s-neon)' : '#fff'
                                                     }}
                                                 >
                                                     <IconDisplay name={opt.name} size={18} />
@@ -506,7 +507,8 @@ const CategoryManager = ({ isOpen, onClose, products = [], onToast }) => {
                                                                             background: editingIcon.name === opt.name ? 'rgba(0,230,118,0.2)' : 'rgba(255,255,255,0.03)',
                                                                             border: editingIcon.name === opt.name ? '2px solid var(--s-neon)' : '1px solid rgba(255,255,255,0.06)',
                                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                            cursor: 'pointer'
+                                                                            cursor: 'pointer',
+                                                                            color: editingIcon.name === opt.name ? 'var(--s-neon)' : '#fff'
                                                                         }}
                                                                     >
                                                                         <IconDisplay name={opt.name} size={16} />

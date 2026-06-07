@@ -23,10 +23,21 @@ function App() {
     const { showToast } = useToast()
 
     useEffect(() => {
+        // 1. Inicializar conexión y cargar datos
         gsService.initWithTasa().then(result => {
             if (result.success && result.tasa) {
                 setTasaBcv(result.tasa)
                 localStorage.setItem('mme_tasa_bcv', result.tasa.toString())
+            }
+        }).catch(() => {})
+        
+        // 2. Sincronizar tasa BCV automáticamente al iniciar
+        gsService.fetchAndUpdateTasaBcv().then(tasaResult => {
+            if (tasaResult?.success && tasaResult.data?.tasa_bcv > 0) {
+                const tasa = tasaResult.data.tasa_bcv
+                setTasaBcv(tasa)
+                localStorage.setItem('mme_tasa_bcv', String(tasa))
+                showToast(`TASA BCV ACTUALIZADA: Bs ${tasa.toFixed(2)}`, 'success')
             }
         }).catch(() => {})
     }, [])

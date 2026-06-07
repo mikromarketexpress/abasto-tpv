@@ -5,7 +5,7 @@ import { useDatabase } from '../hooks/useDatabase'
 import { getImageForProduct, autoLinkAllImages } from '../lib/imageMapper'
 
 const ImageLinker = ({ isOpen, onClose, onImageLinked }) => {
-    const { isReady, getProductos, saveProducto } = useDatabase()
+    const { isReady, getProductos, updateProducto } = useDatabase()
     const [products, setProducts] = useState([])
     const [filteredProducts, setFilteredProducts] = useState([])
     const [search, setSearch] = useState('')
@@ -50,7 +50,7 @@ const ImageLinker = ({ isOpen, onClose, onImageLinked }) => {
             if (!p.imagen_url || p.imagen_url.startsWith('data:') || p.imagen_url === '') {
                 const imageUrl = getImageForProduct(p.nombre)
                 try {
-                    await saveProducto({ ...p, imagen_url: imageUrl }, false)
+                    await updateProducto({ ...p, imagen_url: imageUrl });
                     linked++
                 } catch (err) {
                     console.error('Error linking:', err)
@@ -70,7 +70,7 @@ const ImageLinker = ({ isOpen, onClose, onImageLinked }) => {
     const linkProductImage = async (product) => {
         const imageUrl = getImageForProduct(product.nombre)
         try {
-            await saveProducto({ ...product, imagen_url: imageUrl }, false)
+            await updateProducto({ ...product, imagen_url: imageUrl });
             loadProducts()
             setSelectedProduct(null)
         } catch (err) {

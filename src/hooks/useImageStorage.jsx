@@ -1,7 +1,11 @@
 import { useState, useCallback } from 'react';
 
-const DRIVE_API_URL = 'https://script.google.com/macros/s/AKfycbxy5fcWDS-IB7JSm5bgdCqFsVgj5_y_NhCQhYXBlMTGljYW0_zpjn-RfO8n76g2dvmA/exec';
-const DRIVE_FOLDER_ID = '1Otottj5OHWtAszwKm_MQMIuByt_UBLW8';
+const getDriveApiUrl = () => {
+    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbwIpGQZBypC2LSclLd6DXoh8391PGtscbLEoQ_k_wCAHk6fdtj90yO86Xw-3XIgVTtIqA/exec';
+    return String(url || '').trim().replace(/\s+/g, '').replace(/\/+$/, '');
+};
+const DRIVE_API_URL = getDriveApiUrl();
+const DRIVE_FOLDER_ID = import.meta?.env?.VITE_GS_DRIVE_FOLDER_ID || '1Otottj5OHWtAszwKm_MQMIuByt_UBLW8';
 
 async function compressImage(file, maxWidth = 400, quality = 0.7) {
     return new Promise((resolve, reject) => {
@@ -68,42 +72,39 @@ export function useImageStorage() {
             const response = await fetch(DRIVE_API_URL, {
                 method: 'POST',
                 redirect: 'follow',
-                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                    'Accept': 'application/json',
-                    'Content-Length': payload.length.toString()
+                    'Content-Type': 'text/plain; charset=utf-8'
                 },
                 body: payload
             });
 
-            console.log('[ImageStorage] Response type:', response.type);
-
-            if (response.type === 'opaque') {
-                setUploading(false);
-                return {
-                    success: true,
-                    filename,
-                    url: `https://drive.google.com/uc?export=view&id=${filename}`,
-                    fileId: filename
-                };
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            const result = await response.json();
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (jsonErr) {
+                throw new Error('Respuesta de Google Drive no es un JSON válido: ' + text.substring(0, 200));
+            }
+
             console.log('[ImageStorage] Result:', JSON.stringify(result));
 
             setUploading(false);
 
-            if ((result.status === 'success' || result.success === true) && result.thumbnailUrl) {
+            if (result && (result.success === true || result.status === 'success')) {
+                const realUrl = result.thumbnailUrl || result.webViewLink || '';
                 return {
                     success: true,
                     filename,
-                    url: result.thumbnailUrl,
-                    fileId: result.fileId
+                    url: realUrl,
+                    fileId: result.fileId || ''
                 };
             }
 
-            return { success: false, error: result.message || result.error || 'Error en respuesta' };
+            return { success: false, error: result.error || result.message || 'Error en respuesta de subida' };
         } catch (err) {
             setError(err.message);
             console.error('Upload error:', err);

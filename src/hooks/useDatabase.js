@@ -15,6 +15,7 @@ export function useDatabase() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [syncingStatus, setSyncingStatus] = useState({});
 
   // ==========================================================================
   // INICIALIZACIÓN - Async/Await
@@ -54,35 +55,207 @@ export function useDatabase() {
   }, []);
 
   // ==========================================================================
-  // PRODUCTOS - CRUD (async/await)
+  // PRODUCTOS - CRUD (OPTIMISTA - NO BLOQUEA UI)
   // ==========================================================================
 
-  var addProducto = useCallback(async function(producto) {
-    var result = await gsService.upsertProducto(producto);
-    if (result.success) {
+  var silentRefresh = useCallback(async function() {
+    try {
       await gsService.refresh();
       setProductos(gsService.getTable('Productos') || []);
+      setCategorias(gsService.getTable('Categorias') || []);
+    } catch(err) {
+      console.warn('[useDatabase] silentRefresh error:', err.message);
     }
-    return result;
   }, []);
+
+  var addProducto = useCallback(async function(producto) {
+    // Generate a temporary ID starting with temp_
+    const tempId = String(producto.id).startsWith('temp_') ? producto.id : 'temp_' + Date.now();
+    const productWithTempId = Object.assign({}, producto, { id: tempId, _isOptimistic: true });
+
+    // Set syncing status to 'saving'
+    setSyncingStatus(prev => Object.assign({}, prev, { [tempId]: 'saving' }));
+
+    // Add to list immediately
+    setProductos(function(prev) {
+      return [productWithTempId, ...prev];
+    });
+
+    try {
+      // Send upsert to server (Code.gs knows to assign sequential ID to temp_ ids)
+      var result = await gsService.upsertProducto(producto);
+      
+      if (result.success) {
+        const realId = result.id || tempId;
+        const finalImageUrl = result.imagen_url || '';
+        // Update product in local state with real server ID and final image URL
+        setProductos(function(prev) {
+          return prev.map(function(p) {
+            if (String(p.id) !== String(tempId)) return p;
+            // Use server URL if valid; otherwise keep local URL only if it's not a blob/data preview
+            const localUrl = (p.imagen_url && !p.imagen_url.startsWith('blob:') && !p.imagen_url.startsWith('data:')) ? p.imagen_url : '';
+            const bestUrl = finalImageUrl || localUrl;
+            return Object.assign({}, p, { id: realId, imagen_url: bestUrl, _isOptimistic: false });
+          });
+        });
+        
+        // Remove from syncing status
+        setSyncingStatus(prev => {
+          const next = Object.assign({}, prev);
+          delete next[tempId];
+          return next;
+        });
+
+        // Trigger background silent refresh to ensure full parity
+        setTimeout(function() { silentRefresh(); }, 2000);
+      } else {
+        // Rollback on failure
+        setProductos(function(prev) {
+          return prev.filter(function(p) { return String(p.id) !== String(tempId); });
+        });
+        setSyncingStatus(prev => {
+          const next = Object.assign({}, prev);
+          delete next[tempId];
+          return next;
+        });
+      }
+      return result;
+    } catch(err) {
+      // Rollback on error
+      setProductos(function(prev) {
+        return prev.filter(function(p) { return String(p.id) !== String(tempId); });
+      });
+      setSyncingStatus(prev => {
+        const next = Object.assign({}, prev);
+        delete next[tempId];
+        return next;
+      });
+      return { success: false, error: err.message };
+    }
+  }, [silentRefresh]);
 
   var updateProducto = useCallback(async function(producto) {
-    var result = await gsService.upsertProducto(producto);
-    if (result.success) {
-      await gsService.refresh();
-      setProductos(gsService.getTable('Productos') || []);
+    const id = producto.id;
+    let originalProduct = null;
+
+    // Set syncing status to 'saving'
+    setSyncingStatus(prev => Object.assign({}, prev, { [id]: 'saving' }));
+
+    // Update locally immediately
+    setProductos(function(prev) {
+      const found = prev.find(p => String(p.id) === String(id));
+      if (found) originalProduct = found;
+      return prev.map(function(p) {
+        return String(p.id) === String(id) 
+          ? Object.assign({}, p, producto, { imagen_url: producto.imagen_url || p.imagen_url }) 
+          : p;
+      });
+    });
+
+    try {
+      var result = await gsService.upsertProducto(producto);
+      
+      if (result.success) {
+        // Update product locally with response values (like final image URL)
+        const finalImageUrl = result.imagen_url || '';
+        setProductos(function(prev) {
+          return prev.map(function(p) {
+            if (String(p.id) !== String(id)) return p;
+            // Use server URL if valid; otherwise keep local URL only if it's not a blob/data preview
+            const localUrl = (p.imagen_url && !p.imagen_url.startsWith('blob:') && !p.imagen_url.startsWith('data:')) ? p.imagen_url : '';
+            const bestUrl = finalImageUrl || localUrl;
+            return Object.assign({}, p, { imagen_url: bestUrl });
+          });
+        });
+
+        setSyncingStatus(prev => {
+          const next = Object.assign({}, prev);
+          delete next[id];
+          return next;
+        });
+
+        setTimeout(function() { silentRefresh(); }, 2000);
+      } else {
+        // Rollback on failure
+        if (originalProduct) {
+          setProductos(function(prev) {
+            return prev.map(p => String(p.id) === String(id) ? originalProduct : p);
+          });
+        }
+        setSyncingStatus(prev => {
+          const next = Object.assign({}, prev);
+          delete next[id];
+          return next;
+        });
+      }
+      return result;
+    } catch(err) {
+      // Rollback on error
+      if (originalProduct) {
+        setProductos(function(prev) {
+          return prev.map(p => String(p.id) === String(id) ? originalProduct : p);
+        });
+      }
+      setSyncingStatus(prev => {
+        const next = Object.assign({}, prev);
+        delete next[id];
+        return next;
+      });
+      return { success: false, error: err.message };
     }
-    return result;
-  }, []);
+  }, [silentRefresh]);
 
   var deleteProducto = useCallback(async function(id) {
-    var result = await gsService.deleteProducto(id);
-    if (result.success) {
-      await gsService.refresh();
-      setProductos(gsService.getTable('Productos') || []);
+    let originalProduct = null;
+
+    setSyncingStatus(prev => Object.assign({}, prev, { [id]: 'deleting' }));
+
+    // Delete locally immediately
+    setProductos(function(prev) {
+      const found = prev.find(p => String(p.id) === String(id));
+      if (found) originalProduct = found;
+      return prev.filter(p => String(p.id) !== String(id));
+    });
+
+    try {
+      var result = await gsService.deleteProducto(id);
+      
+      if (result.success) {
+        setSyncingStatus(prev => {
+          const next = Object.assign({}, prev);
+          delete next[id];
+          return next;
+        });
+        setTimeout(function() { silentRefresh(); }, 2000);
+      } else {
+        // Rollback deletion
+        if (originalProduct) {
+          setProductos(function(prev) {
+            return [originalProduct, ...prev];
+          });
+        }
+        setSyncingStatus(prev => {
+          const next = Object.assign({}, prev);
+          delete next[id];
+          return next;
+        });
+      }
+      return result;
+    } catch(err) {
+      // Rollback deletion
+      if (originalProduct) {
+        setProductos(function(prev) {
+          return [originalProduct, ...prev];
+        });
+      }
+      setSyncingStatus(prev => {
+        const next = Object.assign({}, prev);
+        delete next[id];
+        return next;
+      });
+      return { success: false, error: err.message };
     }
-    return result;
-  }, []);
+  }, [silentRefresh]);
 
   // ==========================================================================
   // CATEGORÍAS - CRUD (async/await)
@@ -173,11 +346,23 @@ export function useDatabase() {
 
   var forceSync = refresh;
 
-  var getProductos = useCallback(function() { return productos; }, [productos]);
-  var getCategorias = useCallback(function() { return categorias; }, [categorias]);
-  var getConfiguracion = useCallback(function() { return { tasa_bcv: 46.5 }; }, []);
-  var getSesionActiva = useCallback(function() { return null; }, []);
-  var saveVenta = useCallback(function(venta) { return Promise.resolve({ success: true }); }, []);
+var getProductos = useCallback(function() { return productos; }, [productos]);
+   var getCategorias = useCallback(function() { return categorias; }, [categorias]);
+   var getConfiguracion = useCallback(function() { return { tasa_bcv: 46.5 }; }, []);
+   var getSesionActiva = useCallback(function() { return null; }, []);
+   var getVentas = useCallback(function() { return []; }, []);
+   var saveVenta = useCallback(async function(venta) {
+    try {
+      var result = await gsService.saveSale(venta);
+      if (result.success) {
+        setProductos(gsService.getTable('Productos') || []);
+        setCategorias(gsService.getTable('Categorias') || []);
+      }
+      return result;
+    } catch(err) {
+      return { success: false, error: err.message };
+    }
+  }, []);
   var updateStock = useCallback(function(id, newStock) {
     var prod = productos.find(function(p) { return p.id === id; });
     if (prod) {
@@ -201,6 +386,7 @@ export function useDatabase() {
     error: error,
     isOnline: isOnline,
     isReady: !loading,
+    syncingStatus: syncingStatus,
     addProducto: addProducto,
     updateProducto: updateProducto,
     deleteProducto: deleteProducto,
@@ -216,6 +402,7 @@ export function useDatabase() {
     getCategorias: getCategorias,
     getConfiguracion: getConfiguracion,
     getSesionActiva: getSesionActiva,
+    getVentas: getVentas,
     saveVenta: saveVenta,
     updateStock: updateStock,
     saveCategoria: saveCategoria,

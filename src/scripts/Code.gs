@@ -1,6 +1,6 @@
 /**
- * MICRO MARKET EXPRESS - Backend v7.0 (LIMPIO)
- * =============================================
+ * MICRO MARKET EXPRESS - Backend v8.2 (IMAGENES FIX & FALLBACK)
+ * =============================================================
  * Sheet: 1VVejGluaLaGTXsT9F7yl5sx5-ePsL2KEp6pCKK_pkWo
  * Drive: 1Otottj5OHWtAszwKm_MQMIuByt_UBLW8
  */
@@ -15,19 +15,41 @@ function getSheet(name) {
 function getDriveFilesMap() {
   var map = {};
   try {
-    var folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-    var files = folder.getFiles();
-    while (files.hasNext()) {
-      var file = files.next();
-      var name = String(file.getName()).toLowerCase().trim();
-      var dotIndex = name.lastIndexOf('.');
-      var key = dotIndex > -1 ? name.substring(0, dotIndex) : name;
-      map[key] = file.getId();
+    var folderId = DRIVE_FOLDER_ID;
+    var folder;
+    try {
+      folder = DriveApp.getFolderById(folderId);
+    } catch (e) {
+      var fallbackIter = DriveApp.getFoldersByName('Micro Market Express Images');
+      folder = fallbackIter.hasNext() ? fallbackIter.next() : null;
+    }
+    if (folder) {
+      var files = folder.getFiles();
+      while (files.hasNext()) {
+        var file = files.next();
+        var name = String(file.getName()).toLowerCase().trim();
+        var dotIndex = name.lastIndexOf('.');
+        var key = dotIndex > -1 ? name.substring(0, dotIndex) : name;
+        map[key] = file.getId();
+      }
     }
   } catch (e) {
     Logger.log('Error en getDriveFilesMap: ' + e.message);
   }
   return map;
+}
+
+function migrarUrlImagen(url) {
+  if (!url || typeof url !== 'string') return url;
+  // Convertir URLs antiguas de Google Drive a formato thumbnail
+  if (url.indexOf('drive.google.com/uc') !== -1 || url.indexOf('drive.google.com/file') !== -1) {
+    var idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if (!idMatch) idMatch = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (idMatch && idMatch[1]) {
+      return 'https://drive.google.com/thumbnail?id=' + idMatch[1] + '&sz=w400';
+    }
+  }
+  return url;
 }
 
 function getAllSheetsData() {
@@ -43,6 +65,10 @@ function getAllSheetsData() {
         data[sheetName] = sheetData.map(function(row) {
           var obj = {};
           headers.forEach(function(h, i) { obj[String(h).toLowerCase().trim()] = row[i]; });
+          // Migrar URL de imagen a formato thumbnail si es necesario
+          if (sheetName === 'Productos' && obj.imagen_url) {
+            obj.imagen_url = migrarUrlImagen(String(obj.imagen_url));
+          }
           return obj;
         });
       }
@@ -67,25 +93,36 @@ function getAllSheetsData() {
   return data;
 }
 
+
 function doGet(e) {
-  try {
-    var data = getAllSheetsData();
-    return ContentService.createTextOutput(JSON.stringify({
-      success: true,
-      status: 'ready',
-      service: 'Micro Market Express v7.0',
-      tasaBCV: data.tasaBCV,
-      fecha: data.fechaTasa,
-      Productos: data.Productos,
-      Categorias: data.Categorias,
-      Ventas: data.Ventas,
-      Caja: data.Caja,
-      driveFiles: data.driveFiles
-    })).setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
+   try {
+     // Siempre intentar sincronizar tasa al hacer doGet
+     try {
+       var syncResult = syncTasaBCV();
+       if (syncResult && syncResult.success) {
+         Logger.log('Tasa sincronizada automáticamente en doGet: ' + syncResult.data.tasa_bcv);
+       }
+     } catch(err) {
+       Logger.log('Error auto-sync tasa: ' + err);
+     }
+     
+     var data = getAllSheetsData();
+     return ContentService.createTextOutput(JSON.stringify({
+       success: true,
+       status: 'ready',
+       service: 'Micro Market Express v8.2',
+       tasaBCV: data.tasaBCV,
+       fecha: data.fechaTasa,
+       Productos: data.Productos,
+       Categorias: data.Categorias,
+       Ventas: data.Ventas,
+       Caja: data.Caja,
+       driveFiles: data.driveFiles
+     })).setMimeType(ContentService.MimeType.JSON);
+   } catch(err) {
+     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message })).setMimeType(ContentService.MimeType.JSON);
+   }
+ }
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -148,34 +185,30 @@ function doPost(e) {
 function uploadImage(data) {
   try {
     Logger.log('uploadImage - Iniciando...');
-    Logger.log('uploadImage - data: ' + JSON.stringify(data));
-    
-    if (!data) {
-      return { success: false, error: 'No se recibió data' };
-    }
-    if (!data.data) {
-      return { success: false, error: 'No se recibió imagen (data.data vacío)' };
-    }
-    if (!data.filename) {
-      return { success: false, error: 'No se recibió filename' };
-    }
+    if (!data) return { success: false, error: 'No se recibió data' };
+    if (!data.data) return { success: false, error: 'No se recibió imagen (data.data vacío)' };
+    if (!data.filename) return { success: false, error: 'No se recibió filename' };
     
     var folderId = data.folderId ? data.folderId : DRIVE_FOLDER_ID;
     Logger.log('uploadImage - folderId: ' + folderId);
     
-    var folder = DriveApp.getFolderById(folderId);
-    Logger.log('uploadImage - Folder obtenido: ' + folder.getName());
+    var folder;
+    try {
+      folder = DriveApp.getFolderById(folderId);
+    } catch (e) {
+      Logger.log('Carpeta primaria no disponible (' + folderId + '), usando fallback. ' + e.message);
+      var fallbackIter = DriveApp.getFoldersByName('Micro Market Express Images');
+      folder = fallbackIter.hasNext() ? fallbackIter.next() : DriveApp.createFolder('Micro Market Express Images');
+    }
     
     var decodedBytes = Utilities.base64Decode(data.data);
-    Logger.log('uploadImage - Bytes decodificados: ' + decodedBytes.length);
-    
     var ext = data.filename && data.filename.endsWith('.png') ? 'image/png' : 'image/webp';
     var file = folder.createFile(Utilities.newBlob(decodedBytes, ext, data.filename));
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
     var result = { 
       success: true, 
-      thumbnailUrl: 'https://drive.google.com/uc?id=' + file.getId() + '&export=view', 
+      thumbnailUrl: 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w400', 
       webViewLink: file.getUrl(), 
       fileId: file.getId() 
     };
@@ -183,15 +216,14 @@ function uploadImage(data) {
     return result;
   } catch(err) {
     Logger.log('uploadImage - Error: ' + err.message);
-    Logger.log('uploadImage - Stack: ' + err.stack);
-    return { success: false, error: err.message + '. Verifica que el folder_id sea correcto y que tengas permisos de Drive.' };
+    return { success: false, error: err.message };
   }
 }
 
 function saveSale(ss, data) {
   try {
     var sheet = ss.getSheetByName('Ventas') || ss.insertSheet('Ventas');
-    var headers = ['id', 'productos_json', 'total_costo_usd', 'total_venta_usd', 'tasa_bcv', 'utilidad_neta_usd', 'sesion_caja_id', 'pago_efectivo_usd', 'pago_efectivo_bs', 'pago_debito', 'pago_pago_movil', 'pago_bio_pago', 'pago_transferencia', 'vuelto_entregado_usd', 'vuelto_entregado_bs', 'fecha', 'total_bs'];
+    var headers = ['id', 'productos_json', 'total_costo_usd', 'total_venta_usd', 'tasa_bcv', 'utilidad_neta_usd', 'sesion_caja_id', 'pago_efectivo_usd', 'pago_efectivo_bs', 'pago_debito', 'pago_pago_movil', 'pago_bio_pago', 'pago_transferencia', 'vuelto_entregado_usd', 'vuelto_entregado_bs', 'fecha', 'total_bs', 'vuelto_efectivo_bs', 'vuelto_pago_movil', 'vuelto_transferencia'];
     ensureHeaders(sheet, headers);
     sheet.appendRow([
       data.id || Utilities.getUuid(),
@@ -210,7 +242,10 @@ function saveSale(ss, data) {
       Number(data.vuelto_entregado_usd) || 0,
       Number(data.vuelto_entregado_bs) || 0,
       data.fecha || new Date().toISOString(),
-      Number(data.total_bs) || 0
+      Number(data.total_bs) || 0,
+      Number(data.vuelto_efectivo_bs) || 0,
+      Number(data.vuelto_pago_movil) || 0,
+      Number(data.vuelto_transferencia) || 0
     ]);
     return { success: true };
   } catch(e) { return { success: false, error: e.message }; }
@@ -229,24 +264,27 @@ function getSales(ss) {
 }
 
 function guardarImagenEnDrive(idProducto, imagenBase64, extension) {
-  var FOLDER_ID = DRIVE_FOLDER_ID || "1Otottj5OHWtAszwKm_MQMIuByt_UBLW8"; // ID de tu carpeta pública
-  
+  var folderId = DRIVE_FOLDER_ID || "1Otottj5OHWtAszwKm_MQMIuByt_UBLW8";
   if (!imagenBase64) return "";
   
   try {
-    var carpeta = DriveApp.getFolderById(FOLDER_ID);
+    var carpeta;
+    try {
+      carpeta = DriveApp.getFolderById(folderId);
+    } catch (e) {
+      Logger.log('Carpeta primaria no disponible, usando fallback. ' + e.message);
+      var fallbackIter = DriveApp.getFoldersByName('Micro Market Express Images');
+      carpeta = fallbackIter.hasNext() ? fallbackIter.next() : DriveApp.createFolder('Micro Market Express Images');
+    }
     
-    // CORRECCIÓN CRUCIAL: Eliminar el prefijo data:image/...;base64, si el frontend lo incluye
     var contenidoLimpio = imagenBase64;
     if (imagenBase64.indexOf(",") !== -1) {
       contenidoLimpio = imagenBase64.split(",")[1];
     }
     
-    // Decodificar el contenido puro
     var deccodedBytes = Utilities.base64Decode(contenidoLimpio);
     var nombreArchivo = idProducto + "." + (extension || "jpg");
     
-    // Evitar duplicados con cualquier extensión anterior para ese ID
     var archivos = carpeta.getFiles();
     while (archivos.hasNext()) {
       var archivo = archivos.next();
@@ -256,16 +294,11 @@ function guardarImagenEnDrive(idProducto, imagenBase64, extension) {
       }
     }
     
-    // Crear el archivo nuevo en la carpeta de Drive
     var blob = Utilities.newBlob(deccodedBytes, "image/" + (extension || "jpeg"), nombreArchivo);
     var nuevoArchivo = carpeta.createFile(blob);
-    
-    // Forzar permisos públicos para que el Punto de Venta pueda renderizarla
     nuevoArchivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
-    // Retornar la URL de descarga directa real para guardar en Google Sheets
-    return "https://docs.google.com/uc?export=download&id=" + nuevoArchivo.getId();
-    
+    return "https://drive.google.com/thumbnail?id=" + nuevoArchivo.getId() + "&sz=w400";
   } catch (error) {
     throw new Error("No se pudo guardar la imagen en Google Drive: " + error.toString());
   }
@@ -278,13 +311,18 @@ function upsertProducto(ss, data) {
       sheet.appendRow(['id', 'nombre', 'descripcion_corta', 'numero_unid', 'unidad_medida', 'categoria', 'categoria_nombre', 'precio_usd', 'precio_costo', 'stock', 'stock_minimo', 'imagen_url', 'tasa_bcv', 'codigo_barras']); 
       sheet.getRange(1, 1, 1, 14).setFontWeight('bold'); 
     }
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    
-    // Paso A (Generación del ID):
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];    
     var idProducto = data.id;
-    var isNew = !idProducto || idProducto === 'new' || String(idProducto).includes('new') || String(idProducto).indexOf('-') !== -1;
     
-    if (isNew) {
+    var rowIndex = -1;
+    if (idProducto && sheet.getLastRow() > 1) {
+      var allIds = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+      rowIndex = allIds.findIndex(function(r) { return String(r[0]).trim() === String(idProducto).trim(); });
+    }
+    
+    var isNew = !idProducto || idProducto === 'new' || String(idProducto).startsWith('temp_') || rowIndex === -1;
+    
+    if (isNew && rowIndex === -1) {
       var maxIdNum = 0;
       if (sheet.getLastRow() > 1) {
         var allExistingIds = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
@@ -299,7 +337,7 @@ function upsertProducto(ss, data) {
       data.id = idProducto;
     }
     
-    // Paso B (Carga Física en Google Drive):
+    var errorImagen = null;
     if (data.imagenBase64) {
       try {
         var urlDirecta = guardarImagenEnDrive(idProducto, data.imagenBase64, data.extension);
@@ -307,17 +345,10 @@ function upsertProducto(ss, data) {
           data.imagen_url = urlDirecta;
         }
       } catch (errImg) {
-        return { success: false, error: "Error al subir la imagen a Google Drive: " + errImg.message };
+        errorImagen = errImg.message;
       }
     }
 
-    // Paso C (Escritura en Google Sheets):
-    var rowIndex = -1;
-    if (sheet.getLastRow() > 1) {
-      var allIds = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
-      rowIndex = allIds.findIndex(function(r) { return String(r[0]) === String(idProducto); });
-    }
-    
     var rowData = headers.map(function(h) {
       var key = String(h).toLowerCase().trim();
       var val = data[key] !== undefined ? data[key] : '';
@@ -325,7 +356,7 @@ function upsertProducto(ss, data) {
       return val;
     });
     if (rowIndex === -1) sheet.appendRow(rowData); else sheet.getRange(rowIndex + 2, 1, 1, headers.length).setValues([rowData]);
-    return { success: true, data: getAllSheetsData() };
+    return { success: true, id: String(idProducto), imagen_url: data.imagen_url || '', error_imagen: errorImagen, data: getAllSheetsData() };
   } catch(e) { return { success: false, error: e.message }; }
 }
 
@@ -343,10 +374,25 @@ function deleteProducto(ss, data) {
 function upsertCategory(ss, data) {
   try {
     var sheet = ss.getSheetByName('Categorias') || ss.insertSheet('Categorias');
-    if (sheet.getLastRow() === 0) { sheet.appendRow(['id', 'nombre', 'icono', 'icono_nombre', 'icono_color', 'orden']); sheet.getRange(1, 1, 1, 6).setFontWeight('bold'); }
+    if (sheet.getLastRow() === 0) { 
+      sheet.appendRow(['id', 'nombre', 'icono', 'icono_nombre', 'icono_color', 'orden']); 
+      sheet.getRange(1, 1, 1, 6).setFontWeight('bold'); 
+    }
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    var allIds = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
-    var rowIndex = allIds.findIndex(function(r) { return String(r[0]) === String(data.id); });
+    
+    var idCategoria = data.id;
+    var rowIndex = -1;
+    if (idCategoria && sheet.getLastRow() > 1) {
+      var allIds = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+      rowIndex = allIds.findIndex(function(r) { return String(r[0]).trim() === String(idCategoria).trim(); });
+    }
+    
+    var isNew = !idCategoria || idCategoria === 'new' || String(idCategoria).startsWith('temp_') || rowIndex === -1;
+    if (isNew && rowIndex === -1) {
+      idCategoria = 'cat_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      data.id = idCategoria;
+    }
+    
     var rowData = headers.map(function(h) {
       var key = String(h).toLowerCase().trim();
       var val = data[key] !== undefined ? data[key] : '';
@@ -473,12 +519,24 @@ function upsertCaja(ss, data) {
       data.observaciones
     ];
     if (rowIndex === -1) sheet.appendRow(rowData); else sheet.getRange(rowIndex + 2, 1, 1, 14).setValues([rowData]);
-    return { success: true, data: getCaja() };
+    return { success: true, data: { Caja: getCaja() } };
   } catch(e) { return { success: false, error: e.message }; }
 }
 
 function abrirCaja(ss, data) {
   try {
+    // PRIMERO: Sincronizar tasa BCV automáticamente desde el sitio oficial
+    var tasaSincronizada = syncTasaBCV();
+    var tasaFinal = parseFloat(data.tasa_bcv_apertura) || 0;
+    
+    // Si la sincronización fue exitosa, usar esa tasa (sobrescribe la manual)
+    if (tasaSincronizada && tasaSincronizada.success && tasaSincronizada.data && tasaSincronizada.data.tasa_bcv > 0) {
+      tasaFinal = tasaSincronizada.data.tasa_bcv;
+      Logger.log('abrirCaja - Tasa BCV sincronizada automáticamente: ' + tasaFinal);
+    } else {
+      Logger.log('abrirCaja - No se pudo sincronizar tasa BCV, usando valor manual: ' + tasaFinal);
+    }
+    
     var sheet = ss.getSheetByName('Caja') || ss.insertSheet('Caja');
     var headers = ['id', 'fecha_apertura', 'apertura_usd', 'apertura_bs', 'tasa_bcv_apertura', 'estado', 'fecha_cierre', 'cierre_usd', 'cierre_bs', 'cierre_debito', 'cierre_pago_movil', 'cierre_bio_pago', 'cierre_transferencia', 'observaciones'];
     ensureHeaders(sheet, headers);
@@ -487,11 +545,29 @@ function abrirCaja(ss, data) {
       data.fecha_apertura,
       parseFloat(data.apertura_usd) || 0,
       parseFloat(data.apertura_bs) || 0,
-      parseFloat(data.tasa_bcv_apertura) || 0,
+      tasaFinal,
       'ACTIVA',
       '', '', '', 0, 0, 0, 0, ''
     ]);
-    return { success: true, data: getCaja() };
+    
+    // Actualizar sheet Tasa con la tasa final (ya actualizado por syncTasaBCV, pero aseguramos)
+    if (tasaFinal > 0) {
+      try {
+        var tasaSheet = ss.getSheetByName('Tasa') || ss.insertSheet('Tasa');
+        if (tasaSheet.getLastRow() === 0) {
+          tasaSheet.appendRow(['tasa_actual', 'fecha_vigencia', 'ultima_sincronizacion']);
+          tasaSheet.getRange(1, 1, 1, 3).setFontWeight('bold');
+        }
+        tasaSheet.getRange('A2').setValue(tasaFinal);
+        tasaSheet.getRange('B2').setValue(new Date().toLocaleDateString('es-VE'));
+        tasaSheet.getRange('C2').setValue(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'));
+        Logger.log('abrirCaja - Tasa actualizada en sheet Tasa: ' + tasaFinal);
+      } catch(e_tasa) {
+        Logger.log('Error al actualizar tasa global en abrirCaja: ' + e_tasa.message);
+      }
+    }
+    
+    return { success: true, data: { Caja: getCaja(), tasaBCV: tasaFinal, tasa_sincronizada: tasaSincronizada?.success || false } };
   } catch(e) { return { success: false, error: e.message }; }
 }
 
@@ -518,28 +594,132 @@ function cerrarCaja(ss, data) {
     if (colMap['cierre_transferencia']) sheet.getRange(row, colMap['cierre_transferencia']).setValue(parseFloat(data.cierre_transferencia) || 0);
     if (colMap['observaciones']) sheet.getRange(row, colMap['observaciones']).setValue(data.observaciones || '');
 
-    return { success: true, data: getCaja() };
+    return { success: true, data: { Caja: getCaja(), tasaBCV: 0 } };
   } catch(e) { return { success: false, error: e.message }; }
 }
 
-function syncTasaBCV() {
+function fetchBcvFromWeb() {
   try {
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = ss.getSheetByName('Tasa') || ss.insertSheet('Tasa');
-    if (sheet.getLastRow() === 0) { sheet.appendRow(['tasa_actual', 'fecha_vigencia', 'ultima_sincronizacion']); sheet.getRange(1, 1, 1, 3).setFontWeight('bold'); }
-    var response = UrlFetchApp.fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar?moneda=bcv', { muteHttpExceptions: true, timeout: 15000 });
-    var json = JSON.parse(response.getContentText());
-    var tasa = json && json.monedasc && json.monedasc.bcv ? parseFloat(String(json.monedasc.bcv.price).replace(',', '.')).toFixed(2) : 0;
-    if (tasa && tasa > 400) {
-      sheet.getRange('A2').setValue(tasa);
-      sheet.getRange('B2').setValue(new Date().toLocaleDateString('es-VE'));
-      sheet.getRange('C2').setValue(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'));
-      SpreadsheetApp.flush();
-      return { success: true, data: { tasa_bcv: tasa, tasa_fecha: new Date().toLocaleDateString('es-VE') } };
+    var response = UrlFetchApp.fetch('https://www.bcv.org.ve/', { 
+      muteHttpExceptions: true, 
+      timeout: 15000,
+      followRedirects: true,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
+      }
+    });
+    var html = response.getContentText();
+    
+    // Patrón 1: Buscar en el div principal del BCV (estructura típica)
+    var usdMatch = html.match(/<div[^>]*id="dolar"[^>]*>[\s\S]*?<strong[^>]*>(\d+[,.]?\d{1,4})<\/strong>/i);
+    if (usdMatch && usdMatch[1]) {
+      var tasaStr = usdMatch[1].replace(',', '.');
+      var tasa = parseFloat(tasaStr);
+      if (tasa > 0 && tasa < 10000) {
+        Logger.log('BCV - Patrón 1 exitoso: ' + tasa);
+        return tasa.toFixed(2);
+      }
     }
-    return { success: false, error: 'Tasa inválida' };
-  } catch(e) { return { success: false, error: e.message }; }
+    
+    // Patrón 2: Buscar USD en tabla o lista de monedas
+    var altMatch = html.match(/USD[\s\S]{0,200}?(\d+[,.]\d{1,4})/i);
+    if (altMatch && altMatch[1]) {
+      var tasaStr = altMatch[1].replace(',', '.');
+      var tasa = parseFloat(tasaStr);
+      if (tasa > 0 && tasa < 10000) {
+        Logger.log('BCV - Patrón 2 exitoso: ' + tasa);
+        return tasa.toFixed(2);
+      }
+    }
+    
+    // Patrón 3: Buscar en cualquier div con número decimal
+    var divMatches = html.match(/<div[^>]*>\s*(\d+[,.]\d{1,4})\s*<\/div>/g);
+    if (divMatches) {
+      for (var i = 0; i < divMatches.length; i++) {
+        var numMatch = divMatches[i].match(/(\d+[,.]\d{1,4})/);
+        if (numMatch) {
+          var tasa = parseFloat(numMatch[1].replace(',', '.'));
+          if (tasa > 40 && tasa < 10000) {
+            Logger.log('BCV - Patrón 3 exitoso: ' + tasa);
+            return tasa.toFixed(2);
+          }
+        }
+      }
+    }
+    
+    Logger.log('BCV - No se encontró tasa en scraping directo');
+    return null;
+  } catch(e) {
+    Logger.log('Error scraping BCV: ' + e.message);
+    return null;
+  }
 }
+
+function syncTasaBCV() {
+   try {
+     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+     var sheet = ss.getSheetByName('Tasa') || ss.insertSheet('Tasa');
+     if (sheet.getLastRow() === 0) { sheet.appendRow(['tasa_actual', 'fecha_vigencia', 'ultima_sincronizacion']); sheet.getRange(1, 1, 1, 3).setFontWeight('bold'); }
+     
+     // 1. Primero intentar scraping directo del BCV
+     var tasa = fetchBcvFromWeb();
+     
+     // 2. Si falla, usar APIs externas como fallback (ordenadas por confiabilidad)
+     if (!tasa || tasa <= 0) {
+       var fuentes = [
+         { url: 'https://pydolarvenezuela-api.vercel.app/api/v1/dollar?moneda=bcv', parser: function(json) { 
+             if (json && json.monedas && json.monedas.bcv && json.monedas.bcv.price) {
+               return parseFloat(String(json.monedas.bcv.price).replace(',', '.')).toFixed(2);
+             }
+             if (json && json.monedasc && json.monedasc.bcv) {
+               return parseFloat(String(json.monedasc.bcv.price).replace(',', '.')).toFixed(2);
+             }
+             return 0;
+         }},
+         { url: 'https://ve.dolarapi.com/v1/dolares/oficial', parser: function(json) {
+             if (json && json.promedio) return parseFloat(json.promedio).toFixed(2);
+             if (json && json.valor) return parseFloat(json.valor).toFixed(2);
+             return 0;
+         }},
+         { url: 'https://s3.amazonaws.com/dolartoday/data.json', parser: function(json) { 
+             return json && json.promedio ? parseFloat(json.promedio).toFixed(2) : 0; 
+         }}
+       ];
+       
+       for (var i = 0; i < fuentes.length; i++) {
+         try {
+           var response = UrlFetchApp.fetch(fuentes[i].url, { muteHttpExceptions: true, timeout: 10000 });
+           var json = JSON.parse(response.getContentText());
+           tasa = fuentes[i].parser(json);
+           if (tasa > 0) {
+             Logger.log('BCV - Tasa obtenida de API fallback #' + (i + 1) + ': ' + tasa);
+             break;
+           }
+         } catch(e) {
+           Logger.log('BCV - API fallback #' + (i + 1) + ' falló: ' + e.message);
+         }
+       }
+     }
+     
+     if (tasa && tasa > 0) {
+       var tasaNum = parseFloat(tasa);
+       var fechaHoy = new Date().toLocaleDateString('es-VE');
+       var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+       
+       sheet.getRange('A2').setValue(tasaNum);
+       sheet.getRange('B2').setValue(fechaHoy);
+       sheet.getRange('C2').setValue(timestamp);
+       SpreadsheetApp.flush();
+       
+       Logger.log('BCV - Tasa actualizada exitosamente: ' + tasaNum + ' (Fecha: ' + fechaHoy + ')');
+       return { success: true, data: { tasa_bcv: tasaNum, tasa_fecha: fechaHoy } };
+     }
+     Logger.log('BCV - Tasa inválida o no disponible de ninguna fuente');
+     return { success: false, error: 'Tasa inválida o no disponible de ninguna fuente' };
+   } catch(e) { return { success: false, error: e.message }; }
+ }
 
 function setupTrigger() {
   var triggers = ScriptApp.getProjectTriggers();

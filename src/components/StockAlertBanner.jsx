@@ -13,7 +13,7 @@ const StockAlertBanner = ({ onNavigateInventory }) => {
             const productos = getProductos()
             const criticos = productos.filter(p => {
                 const min = p.stock_minimo || 5
-                return p.stock_actual <= min
+                return (p.stock || 0) <= min
             })
             setAlertas(criticos)
         }

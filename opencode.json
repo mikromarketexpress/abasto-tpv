@@ -1,0 +1,51 @@
+{
+  "models": {
+    "local": {
+      "provider": "ollama",
+      "base_url": "http://localhost:11434",
+      "model": "qwen2.5-coder:7b"
+    },
+    "web": {
+      "enabled": true,
+      "models": {}
+    }
+  },
+  "permissions": {
+    "web_requests": {
+      "enabled": true,
+      "allowed_domains": [
+        "fonts.googleapis.com",
+        "fonts.gstatic.com",
+        "cdn.jsdelivr.net",
+        "unpkg.com",
+        "script.google.com",
+        "localhost"
+      ]
+    },
+    "file_access": {
+      "enabled": true,
+      "allowed_patterns": [
+        "src/**",
+        "public/**",
+        "assets/**",
+        "index.html",
+        "*.config.js",
+        "*.config.ts",
+        "package.json",
+        "tsconfig.json",
+        ".env*"
+      ]
+    }
+  },
+  "preview": {
+    "port": 5173,
+    "auto_open": true
+  },
+  "project": {
+    "type": "web",
+    "framework": "react",
+    "bundler": "vite",
+    "language": "javascript",
+    "styling": "tailwindcss"
+  }
+}

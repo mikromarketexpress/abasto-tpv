@@ -5,8 +5,7 @@
  */
 
 const getWebAppUrl = () => {
-    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbxy5fcWDS-IB7JSm5bgdCqFsVgj5_y_NhCQhYXBlMTGljYW0_zpjn-RfO8n76g2dvmA/exec';
-    // Sanitizar URL: trim, quitar espacios internos, trailing slashes
+    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbyRPfpWA1pT88lxy079DQTEulSpxb-Rb3-DuwPNc9L2Oi--BEbLb0OJH9vA4xqrZPHc/exec';
     return String(url || '').trim().replace(/\s+/g, '').replace(/\/+$/, '');
 };
 
@@ -208,7 +207,7 @@ class GoogleSheetsService {
                 if (result.data.Productos) this.cache.Productos = result.data.Productos;
                 if (result.data.Categorias) this.cache.Categorias = result.data.Categorias;
                 if (result.data.Caja) this.cache.Caja = result.data.Caja;
-                if (result.data.tasaBCV) this.tasaBcv = Number(result.data.tasaBCV);
+                if (result.data.tasaBCV !== undefined) this.tasaBcv = Number(result.data.tasaBCV);
                 if (result.data.driveFiles) this.cache.driveFiles = result.data.driveFiles;
                 this._saveToLocalStorage();
             }
@@ -240,9 +239,7 @@ class GoogleSheetsService {
 
     async upsertProducto(producto) {
         const result = await this._post('UPSERT_PRODUCTO', producto);
-        if (result.success) {
-            await this.refresh();
-        }
+        // NO llamar refresh() aquí — useDatabase hace silentRefresh en background
         return result;
     }
 
@@ -303,33 +300,25 @@ class GoogleSheetsService {
     // Upsert para Caja
     async upsertCaja(caja) {
         const result = await this._post('UPSERT_CAJA', caja);
-        if (result.success) {
-            await this.refresh();
-        }
         return result;
     }
 
     async abrirSesionCaja(data) {
         const result = await this._post('ABRIR_CAJA', data);
-        if (result.success) {
-            await this.refresh();
-        }
         return result;
     }
 
     async cerrarSesionCaja(data) {
         const result = await this._post('CERRAR_CAJA', data);
-        if (result.success) {
-            await this.refresh();
-        }
         return result;
     }
 
     async fetchTasaBCV() {
         const result = await this._post('FETCH_TASA_BCV', {});
-        if (result.success && result.tasaBCV) {
+        if (result.success && result.tasaBCV !== undefined) {
             this.tasaBcv = result.tasaBCV;
-            await this.refresh();
+            this.cache.tasaBCV = result.tasaBCV;
+            this._saveToLocalStorage();
         }
         return result;
     }
@@ -340,16 +329,22 @@ class GoogleSheetsService {
         const result = await this._post('UPDATE_TASA', { tasa: numTasa })
         if (result.success) {
             this.tasaBcv = numTasa
-            if (result.data?.tasa_bcv) this.tasaBcv = Number(result.data.tasa_bcv)
+            if (result.data?.tasa_bcv !== undefined) this.tasaBcv = Number(result.data.tasa_bcv)
+            this.cache.tasaBCV = this.tasaBcv;
             this._saveToLocalStorage()
-            await this.refresh()
         }
         return result
     }
 
     // Alias para compatibilidad
-    async fetchAndUpdateTasaBcv() {
-        return this.fetchTasaBCV();
+async fetchAndUpdateTasaBcv() {
+        const result = await this._post('FETCH_TASA_BCV', {});
+        if (result.success && result.data?.tasa_bcv !== undefined) {
+            this.tasaBcv = Number(result.data.tasa_bcv);
+            this.cache.tasaBCV = this.tasaBcv;
+            this._saveToLocalStorage();
+        }
+        return result;
     }
 
     // =========================================================================
@@ -402,11 +397,7 @@ class GoogleSheetsService {
 
     // Guardar venta
     async saveSale(sale) {
-        const result = await this._post('SAVE_SALE', sale);
-        if (result.success) {
-            await this.refresh();
-        }
-        return result;
+        return this._post('SAVE_SALE', sale);
     }
 
     // Obtener tasa BCV (sync)

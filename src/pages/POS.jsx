@@ -620,6 +620,7 @@ const LoadingOverlay = ({ isVisible, message }) => {
 
 const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
     const [tipoCliente, setTipoCliente] = useState('Persona Natural')
+    const [prefixSeleccionado, setPrefixSeleccionado] = useState('V-')
     const [nombreCliente, setNombreCliente] = useState('')
     const [identificacionCliente, setIdentificacionCliente] = useState('')
     const [celularCliente, setCelularCliente] = useState('')
@@ -673,16 +674,13 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
     const handleChange = (id, value) => setPagos(prev => ({ ...prev, [id]: String(value) }))
     const handleVueltoChange = (key, value) => setVueltoAsignado(prev => ({ ...prev, [key]: String(value) }))
 
-    const idPrefix = tipoCliente === 'Persona Natural' ? 'V-' : (tipoCliente === 'Persona Juridica' ? 'J-' : '')
-
-
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!puedeConfirmar || loading) return
         setLoading(true)
         try {
             // Clean up any manually typed prefix to avoid double prefixes
-            const cleanId = String(identificacionCliente).replace(/^[vjVJ]-?/, '').trim()
+            const cleanId = String(identificacionCliente).replace(/^[vjgeVJGE]-?/, '').trim()
             await onSubmit({
                 pagos,
                 vuelto_entregado_usd: parseFloat(String(vueltoAsignado.usd || '0').replace(',', '.')) || 0,
@@ -692,7 +690,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 vuelto_transferencia: parseFloat(String(vueltoAsignado.transferencia || '0').replace(',', '.')) || 0,
                 cliente_tipo: tipoCliente,
                 cliente_nombre: nombreCliente,
-                cliente_identificacion: idPrefix + cleanId,
+                cliente_identificacion: prefixSeleccionado + cleanId,
                 cliente_celular: celularCliente,
                 cliente_direccion: direccionCliente
             })
@@ -756,6 +754,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                     <div style={{ padding: '2rem 3rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '3rem' }}>
                         {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
+                        {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.75rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '3rem' }}>
                             <h3 style={{ fontSize: '1.8rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <User size={28} style={{ color: 'var(--s-neon)' }} />
@@ -767,8 +766,10 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 <select 
                                     value={tipoCliente} 
                                     onChange={e => {
-                                        setTipoCliente(e.target.value);
+                                        const val = e.target.value;
+                                        setTipoCliente(val);
                                         setIdentificacionCliente('');
+                                        setPrefixSeleccionado(val === 'Persona Natural' ? 'V-' : 'J-');
                                     }}
                                     className="s-input"
                                     style={{
@@ -786,7 +787,6 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 >
                                     <option value="Persona Natural" style={{ background: '#1a1a1a' }}>Persona Natural</option>
                                     <option value="Persona Juridica" style={{ background: '#1a1a1a' }}>Persona Jurídica</option>
-                                    <option value="Otros" style={{ background: '#1a1a1a' }}>Otros</option>
                                 </select>
                             </div>
 
@@ -810,17 +810,100 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         outline: 'none'
                                     }}
                                     required
-                                />
+                                 />
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
-                                    {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
-                                </label>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
+                                        {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
+                                    </label>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {tipoCliente === 'Persona Natural' ? (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPrefixSeleccionado('V-')}
+                                                    style={{
+                                                        padding: '0.35rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: '800',
+                                                        border: '1px solid',
+                                                        borderColor: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                        background: prefixSeleccionado === 'V-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                        color: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : '#ccc',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    Venezolano (V-)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPrefixSeleccionado('E-')}
+                                                    style={{
+                                                        padding: '0.35rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: '800',
+                                                        border: '1px solid',
+                                                        borderColor: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                        background: prefixSeleccionado === 'E-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                        color: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : '#ccc',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    Extranjero (E-)
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPrefixSeleccionado('J-')}
+                                                    style={{
+                                                        padding: '0.35rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: '800',
+                                                        border: '1px solid',
+                                                        borderColor: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                        background: prefixSeleccionado === 'J-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                        color: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : '#ccc',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    Jurídico (J-)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPrefixSeleccionado('G-')}
+                                                    style={{
+                                                        padding: '0.35rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: '800',
+                                                        border: '1px solid',
+                                                        borderColor: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                        background: prefixSeleccionado === 'G-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                        color: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : '#ccc',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    Gubernamental (G-)
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                    {idPrefix && (
+                                    {prefixSeleccionado && (
                                         <span style={{ position: 'absolute', left: '1.25rem', color: 'var(--s-neon)', fontWeight: '900', fontSize: '1.2rem' }}>
-                                            {idPrefix}
+                                            {prefixSeleccionado}
                                         </span>
                                     )}
                                     <input 
@@ -833,7 +916,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: idPrefix ? '1rem 1.25rem 1rem 3rem' : '1rem 1.25rem',
+                                            padding: prefixSeleccionado ? '1rem 1.25rem 1rem 3rem' : '1rem 1.25rem',
                                             borderRadius: '10px',
                                             fontSize: '1.2rem',
                                             fontWeight: '800',

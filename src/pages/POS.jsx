@@ -1050,10 +1050,33 @@ const PaymentModal = ({
 
                         {/* COLUMNA DERECHA: DESGLOSE DE PAGO */}
                         <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1.75rem', textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>TOTAL A PAGAR</div>
-                                <div style={{ fontSize: '4.5rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                                {/* TOTAL A PAGAR CARD */}
+                                <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>TOTAL A PAGAR</div>
+                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
+                                </div>
+
+                                {/* ESTA FALTANDO CARD */}
+                                <div style={{ 
+                                    background: falta > 0.005 ? 'rgba(255,49,49,0.05)' : 'rgba(0,230,118,0.05)', 
+                                    border: falta > 0.005 ? '1px solid rgba(255,49,49,0.15)' : '1px solid rgba(0,230,118,0.15)', 
+                                    borderRadius: '14px', 
+                                    padding: '1rem', 
+                                    textAlign: 'center',
+                                    transition: 'all 0.3s'
+                                }}>
+                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: falta > 0.005 ? '#ff4f4f' : '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>
+                                        {falta > 0.005 ? 'ESTÁ FALTANDO' : 'PAGO COMPLETO'}
+                                    </div>
+                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: falta > 0.005 ? '#ff3131' : 'var(--s-neon)', lineHeight: 1.1 }}>
+                                        ${formatUSD(falta)}
+                                    </div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem' }}>
+                                        {tasaBcv > 0 ? `BS ${formatBS(falta * tasaBcv)}` : 'BS 0,00'}
+                                    </div>
+                                </div>
                             </div>
 
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1.25rem" }}>

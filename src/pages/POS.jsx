@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User, Copy, Clipboard } from 'lucide-react'
+import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User, Copy, Clipboard, Brush } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../context/ToastContext'
 import { useDatabase } from '../hooks/useDatabase'
@@ -1309,7 +1309,7 @@ const PaymentModal = ({
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                                     <div>
                                         <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (USD)</label>
-                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             <div style={{ position: 'relative', flex: 1 }}>
                                                 <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>$</div>
                                                 <CurrencyInput
@@ -1327,8 +1327,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1341,55 +1341,7 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Limpiar monto"
                                             >
-                                                <X size={16} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('usd', 2)}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#00e676',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#00e676'; }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 00"
-                                            >
-                                                00
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('usd', 3)}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#00e676',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#00e676'; }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 000"
-                                            >
-                                                000
+                                                <Brush size={18} />
                                             </button>
                                             <button
                                                 type="button"
@@ -1397,8 +1349,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1411,14 +1363,14 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Pegar monto de vuelto"
                                             >
-                                                <Clipboard size={16} />
+                                                <Clipboard size={18} />
                                             </button>
                                         </div>
                                     </div>
 
                                     <div>
                                         <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (BS)</label>
-                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             <div style={{ position: 'relative', flex: 1 }}>
                                                 <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>Bs</div>
                                                 <BsInput
@@ -1437,8 +1389,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1451,57 +1403,7 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Limpiar monto"
                                             >
-                                                <X size={16} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('bs', 2)}
-                                                disabled={tasaBcv === 0}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#2196f3',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#2196f3'; } }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 00"
-                                            >
-                                                00
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('bs', 3)}
-                                                disabled={tasaBcv === 0}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#2196f3',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#2196f3'; } }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 000"
-                                            >
-                                                000
+                                                <Brush size={18} />
                                             </button>
                                             <button
                                                 type="button"
@@ -1510,8 +1412,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1524,14 +1426,14 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Pegar monto de vuelto"
                                             >
-                                                <Clipboard size={16} />
+                                                <Clipboard size={18} />
                                             </button>
                                         </div>
                                     </div>
 
                                     <div>
                                         <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.5rem' }}>VUELTO PAGO MÓVIL (BS)</label>
-                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             <div style={{ position: 'relative', flex: 1 }}>
                                                 <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ffffff', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>Bs</div>
                                                 <BsInput
@@ -1550,8 +1452,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1564,57 +1466,7 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Limpiar monto"
                                             >
-                                                <X size={16} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('pago_movil', 2)}
-                                                disabled={tasaBcv === 0}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#ffffff',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 00"
-                                            >
-                                                00
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('pago_movil', 3)}
-                                                disabled={tasaBcv === 0}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#ffffff',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 000"
-                                            >
-                                                000
+                                                <Brush size={18} />
                                             </button>
                                             <button
                                                 type="button"
@@ -1623,8 +1475,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1637,14 +1489,14 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Pegar monto de vuelto"
                                             >
-                                                <Clipboard size={16} />
+                                                <Clipboard size={18} />
                                             </button>
                                         </div>
                                     </div>
 
                                     <div>
                                         <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.5rem' }}>VUELTO TRANSFERENCIA (BS)</label>
-                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             <div style={{ position: 'relative', flex: 1 }}>
                                                 <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ffffff', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>Bs</div>
                                                 <BsInput
@@ -1663,8 +1515,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1677,57 +1529,7 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Limpiar monto"
                                             >
-                                                <X size={16} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('transferencia', 2)}
-                                                disabled={tasaBcv === 0}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.5rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#ffffff',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 00"
-                                            >
-                                                00
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => addZeroes('transferencia', 3)}
-                                                disabled={tasaBcv === 0}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
-                                                    height: '3.5rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: '#ffffff',
-                                                    fontWeight: '800',
-                                                    fontSize: '0.85rem',
-                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
-                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                                                title="Agregar 000"
-                                            >
-                                                000
+                                                <Brush size={18} />
                                             </button>
                                             <button
                                                 type="button"
@@ -1736,8 +1538,8 @@ const PaymentModal = ({
                                                 style={{
                                                     background: 'rgba(255,255,255,0.03)',
                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                    borderRadius: '8px',
-                                                    width: '2.8rem',
+                                                    borderRadius: '10px',
+                                                    width: '3.5rem',
                                                     height: '3.5rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1750,7 +1552,7 @@ const PaymentModal = ({
                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                                 title="Pegar monto de vuelto"
                                             >
-                                                <Clipboard size={16} />
+                                                <Clipboard size={18} />
                                             </button>
                                         </div>
                                     </div>

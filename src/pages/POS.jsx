@@ -737,6 +737,15 @@ const PaymentModal = ({
     const handleChange = (id, value) => setPagos(prev => ({ ...prev, [id]: String(value) }))
     const handleVueltoChange = (key, value) => setVueltoAsignado(prev => ({ ...prev, [key]: String(value) }))
 
+    const handleNoData = () => {
+        setTipoCliente('Persona Natural')
+        setPrefixSeleccionado('V-')
+        setNombreCliente('SIN DATOS')
+        setIdentificacionCliente('SIN DATOS')
+        setCellularCliente('SIN DATOS')
+        setDireccionCliente('SIN DATOS')
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!puedeConfirmar || loading) return
@@ -1347,6 +1356,29 @@ const PaymentModal = ({
                             >
                                 <User size={18} />
                                 {tieneCliente ? 'DATOS: REGISTRADO ✓' : 'DATOS DEL CLIENTE'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleNoData}
+                                className="s-btn"
+                                style={{
+                                    flex: 1,
+                                    height: '4.2rem',
+                                    fontSize: '1.2rem',
+                                    fontWeight: 900,
+                                    borderRadius: '12px',
+                                    letterSpacing: '0.05em',
+                                    background: 'rgba(255, 49, 49, 0.08)',
+                                    border: '1px solid rgba(255, 49, 49, 0.3)',
+                                    color: '#ff4f4f',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                <User size={18} />
+                                SIN DATOS
                             </button>
                             <button
                                 type="submit"

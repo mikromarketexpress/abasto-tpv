@@ -692,6 +692,7 @@ const PaymentModal = ({
         METODOS_PAGO.forEach(m => init[m.id] = '')
         return init
     })
+    const [showCustomerModal, setShowCustomerModal] = useState(false)
     const [vueltoAsignado, setVueltoAsignado] = useState({
         usd: '',
         bs: '',
@@ -729,8 +730,9 @@ const PaymentModal = ({
     const tieneVuelto = totalPagadoUSD > total + 0.005
     const vueltoCuadrado = !tieneVuelto || Math.abs(totalVueltoUSD - vueltoTeoricoUSD) < 0.015
 
-    // El botón se habilita si se pagó lo suficiente y, en caso de haber vuelto, éste ha sido desglosado exactamente.
-    const puedeConfirmar = totalPagadoUSD >= total - 0.015 && vueltoCuadrado
+    // El botón se habilita si se pagó lo suficiente, el vuelto ha sido desglosado exactamente, y se llenaron los datos obligatorios del cliente.
+    const tieneCliente = String(nombreCliente).trim() !== '' && String(identificacionCliente).trim() !== ''
+    const puedeConfirmar = totalPagadoUSD >= total - 0.015 && vueltoCuadrado && tieneCliente
 
     const handleChange = (id, value) => setPagos(prev => ({ ...prev, [id]: String(value) }))
     const handleVueltoChange = (key, value) => setVueltoAsignado(prev => ({ ...prev, [key]: String(value) }))
@@ -814,239 +816,393 @@ const PaymentModal = ({
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                     <div style={{ padding: '1.25rem 2.5rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '2.5rem' }}>
-                        {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
+                        {/* COLUMNA IZQUIERDA: RESUMEN DATOS DEL CLIENTE */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '2.5rem' }}>
                             <h3 style={{ fontSize: '1.6rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <User size={26} style={{ color: 'var(--s-neon)' }} />
                                 DATOS DEL CLIENTE
                             </h3>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
-                                <select 
-                                    value={tipoCliente} 
-                                    onChange={e => {
-                                        const val = e.target.value;
-                                        setTipoCliente(val);
-                                        setIdentificacionCliente('');
-                                        setPrefixSeleccionado(val === 'Persona Natural' ? 'V-' : 'J-');
-                                    }}
-                                    className="s-input"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        color: '#fff',
-                                        padding: '0.7rem 1rem',
-                                        borderRadius: '10px',
-                                        fontSize: '1.1rem',
-                                        fontWeight: '800',
-                                        width: '100%',
-                                        outline: 'none',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <option value="Persona Natural" style={{ background: '#1a1a1a' }}>Persona Natural</option>
-                                    <option value="Persona Juridica" style={{ background: '#1a1a1a' }}>Persona Jurídica</option>
-                                </select>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
-                                <input 
-                                    type="text"
-                                    value={nombreCliente}
-                                    onChange={e => setNombreCliente(e.target.value)}
-                                    placeholder="Ingrese Nombre o Razón Social"
-                                    className="s-input"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        color: '#fff',
-                                        padding: '0.7rem 1rem',
-                                        borderRadius: '10px',
-                                        fontSize: '1.1rem',
-                                        fontWeight: '800',
-                                        width: '100%',
-                                        outline: 'none'
-                                    }}
-                                    required
-                                 />
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
-                                        {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
-                                    </label>
-                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                        {tipoCliente === 'Persona Natural' ? (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPrefixSeleccionado('V-')}
-                                                    style={{
-                                                        padding: '0.25rem 0.6rem',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: '800',
-                                                        border: '1px solid',
-                                                        borderColor: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
-                                                        background: prefixSeleccionado === 'V-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
-                                                        color: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : '#ccc',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    Venezolano (V-)
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPrefixSeleccionado('E-')}
-                                                    style={{
-                                                        padding: '0.25rem 0.6rem',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: '800',
-                                                        border: '1px solid',
-                                                        borderColor: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
-                                                        background: prefixSeleccionado === 'E-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
-                                                        color: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : '#ccc',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    Extranjero (E-)
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPrefixSeleccionado('J-')}
-                                                    style={{
-                                                        padding: '0.25rem 0.6rem',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: '800',
-                                                        border: '1px solid',
-                                                        borderColor: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
-                                                        background: prefixSeleccionado === 'J-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
-                                                        color: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : '#ccc',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    Jurídico (J-)
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPrefixSeleccionado('G-')}
-                                                    style={{
-                                                        padding: '0.25rem 0.6rem',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: '800',
-                                                        border: '1px solid',
-                                                        borderColor: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
-                                                        background: prefixSeleccionado === 'G-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
-                                                        color: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : '#ccc',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    Gubernamental (G-)
-                                                </button>
-                                            </>
-                                        )}
+                            {tieneCliente ? (
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '16px',
+                                    padding: '1.5rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1rem',
+                                    flex: 1,
+                                    justifyContent: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>TIPO</span>
+                                        <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{tipoCliente}</span>
                                     </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
-                                    {prefixSeleccionado && (
-                                        <div style={{
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRight: 'none',
-                                            borderTopLeftRadius: '10px',
-                                            borderBottomLeftRadius: '10px',
-                                            color: '#ffffff',
-                                            fontWeight: '900',
-                                            fontSize: '1.1rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            padding: '0 1rem',
-                                            userSelect: 'none'
-                                        }}>
-                                            {prefixSeleccionado}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>NOMBRE / RAZÓN SOCIAL</span>
+                                        <span style={{ fontSize: '1.4rem', fontWeight: 1000, color: '#fff', textTransform: 'uppercase' }}>{nombreCliente}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>{tipoCliente === 'Persona Natural' ? 'CÉDULA' : 'RIF'}</span>
+                                        <span style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>{prefixSeleccionado}{identificacionCliente}</span>
+                                    </div>
+                                    {celularCliente && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>CELULAR</span>
+                                            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{celularCliente}</span>
                                         </div>
                                     )}
-                                    <input 
-                                        type="text"
-                                        value={identificacionCliente}
-                                        onChange={e => setIdentificacionCliente(e.target.value)}
-                                        placeholder={tipoCliente === 'Persona Natural' ? '12345678' : '12345678-9'}
-                                        className="s-input"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.03)',
-                                            border: '1px solid rgba(255,255,255,0.08)',
-                                            color: '#fff',
-                                            padding: '0.7rem 1rem',
-                                            borderRadius: '10px',
-                                            borderTopLeftRadius: prefixSeleccionado ? '0' : '10px',
-                                            borderBottomLeftRadius: prefixSeleccionado ? '0' : '10px',
-                                            fontSize: '1.1rem',
-                                            fontWeight: '800',
-                                            flex: 1,
-                                            outline: 'none'
-                                        }}
-                                        required
-                                    />
+                                    {direccionCliente && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>DIRECCIÓN</span>
+                                            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase' }}>{direccionCliente}</span>
+                                        </div>
+                                    )}
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCustomerModal(true)}
+                                        className="s-btn s-btn-secondary"
+                                        style={{ marginTop: '1rem', width: '100%', height: '3.5rem', fontSize: '1.1rem', fontWeight: 900 }}
+                                    >
+                                        ✏️ MODIFICAR DATOS
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NÚMERO CELULAR</label>
-                                <input 
-                                    type="tel"
-                                    value={celularCliente}
-                                    onChange={e => setCellularCliente(e.target.value)}
-                                    placeholder="Ej: 0412-1234567"
-                                    className="s-input"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        color: '#fff',
-                                        padding: '0.7rem 1rem',
-                                        borderRadius: '10px',
-                                        fontSize: '1.1rem',
-                                        fontWeight: '800',
-                                        width: '100%',
-                                        outline: 'none'
-                                    }}
-                                />
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>DIRECCIÓN CORTA</label>
-                                <input 
-                                    type="text"
-                                    value={direccionCliente}
-                                    onChange={e => setDireccionCliente(e.target.value)}
-                                    placeholder="Ingresar Dirección"
-                                    className="s-input"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        color: '#fff',
-                                        padding: '0.7rem 1rem',
-                                        borderRadius: '10px',
-                                        fontSize: '1.1rem',
-                                        fontWeight: '800',
-                                        width: '100%',
-                                        outline: 'none'
-                                    }}
-                                />
-                            </div>
+                            ) : (
+                                <div style={{
+                                    border: '2px dashed rgba(255,255,255,0.1)',
+                                    borderRadius: '16px',
+                                    padding: '2rem 1.5rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '1.5rem',
+                                    flex: 1,
+                                    textAlign: 'center',
+                                    background: 'rgba(255,255,255,0.01)'
+                                }}>
+                                    <div style={{
+                                        width: '4.5rem',
+                                        height: '4.5rem',
+                                        borderRadius: '50%',
+                                        background: 'rgba(0, 230, 118, 0.05)',
+                                        border: '1px solid rgba(0, 230, 118, 0.15)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--s-neon)'
+                                    }}>
+                                        <User size={36} />
+                                    </div>
+                                    <div>
+                                        <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff', margin: '0 0 0.5rem 0' }}>CLIENTE NO REGISTRADO</h4>
+                                        <p style={{ fontSize: '0.95rem', color: '#888', margin: 0 }}>Debes registrar los datos del cliente para poder confirmar el pago.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCustomerModal(true)}
+                                        className="s-btn s-btn-primary"
+                                        style={{ width: '100%', height: '3.8rem', fontSize: '1.1rem', fontWeight: 900 }}
+                                    >
+                                        👤 INGRESAR DATOS DEL CLIENTE
+                                    </button>
+                                </div>
+                            )}
                         </div>
+
+                        {/* SUB-MODAL PARA INGRESAR DATOS DEL CLIENTE */}
+                        <AnimatePresence>
+                            {showCustomerModal && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setShowCustomerModal(false)}
+                                    style={{
+                                        position: 'fixed',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100vw',
+                                        height: '100vh',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        background: 'rgba(0,0,0,0.75)',
+                                        zIndex: 10000,
+                                        backdropFilter: 'blur(4px)'
+                                    }}
+                                >
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        onClick={e => e.stopPropagation()}
+                                        style={{
+                                            width: '38rem',
+                                            background: '#1a1a1a',
+                                            borderRadius: '20px',
+                                            border: '2px solid var(--s-neon)',
+                                            boxShadow: '0 0 40px rgba(0,230,118,0.15)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        {/* Header */}
+                                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--s-neon)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                <User size={22} />
+                                                DATOS DEL CLIENTE
+                                            </h3>
+                                            <button type="button" onClick={() => setShowCustomerModal(false)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>
+                                                <X size={26} />
+                                            </button>
+                                        </div>
+                                        {/* Body */}
+                                        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
+                                                <select 
+                                                    value={tipoCliente} 
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        setTipoCliente(val);
+                                                        setIdentificacionCliente('');
+                                                        setPrefixSeleccionado(val === 'Persona Natural' ? 'V-' : 'J-');
+                                                    }}
+                                                    className="s-input"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        color: '#fff',
+                                                        padding: '0.7rem 1rem',
+                                                        borderRadius: '10px',
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '800',
+                                                        width: '100%',
+                                                        outline: 'none',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <option value="Persona Natural" style={{ background: '#1a1a1a' }}>Persona Natural</option>
+                                                    <option value="Persona Juridica" style={{ background: '#1a1a1a' }}>Persona Jurídica</option>
+                                                </select>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
+                                                <input 
+                                                    type="text"
+                                                    value={nombreCliente}
+                                                    onChange={e => setNombreCliente(e.target.value)}
+                                                    placeholder="Ingrese Nombre o Razón Social"
+                                                    className="s-input"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        color: '#fff',
+                                                        padding: '0.7rem 1rem',
+                                                        borderRadius: '10px',
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '800',
+                                                        width: '100%',
+                                                        outline: 'none'
+                                                    }}
+                                                    required
+                                                 />
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
+                                                        {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
+                                                    </label>
+                                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                        {tipoCliente === 'Persona Natural' ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPrefixSeleccionado('V-')}
+                                                                    style={{
+                                                                        padding: '0.25rem 0.6rem',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.85rem',
+                                                                        fontWeight: '800',
+                                                                        border: '1px solid',
+                                                                        borderColor: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                                        background: prefixSeleccionado === 'V-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                                        color: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : '#ccc',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    Venezolano (V-)
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPrefixSeleccionado('E-')}
+                                                                    style={{
+                                                                        padding: '0.25rem 0.6rem',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.85rem',
+                                                                        fontWeight: '800',
+                                                                        border: '1px solid',
+                                                                        borderColor: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                                        background: prefixSeleccionado === 'E-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                                        color: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : '#ccc',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    Extranjero (E-)
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPrefixSeleccionado('J-')}
+                                                                    style={{
+                                                                        padding: '0.25rem 0.6rem',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.85rem',
+                                                                        fontWeight: '800',
+                                                                        border: '1px solid',
+                                                                        borderColor: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                                        background: prefixSeleccionado === 'J-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                                        color: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : '#ccc',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    Jurídico (J-)
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPrefixSeleccionado('G-')}
+                                                                    style={{
+                                                                        padding: '0.25rem 0.6rem',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.85rem',
+                                                                        fontWeight: '800',
+                                                                        border: '1px solid',
+                                                                        borderColor: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
+                                                                        background: prefixSeleccionado === 'G-' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255,255,255,0.02)',
+                                                                        color: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : '#ccc',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                >
+                                                                    Gubernamental (G-)
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
+                                                    {prefixSeleccionado && (
+                                                        <div style={{
+                                                            background: 'rgba(255,255,255,0.05)',
+                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                            borderRight: 'none',
+                                                            borderTopLeftRadius: '10px',
+                                                            borderBottomLeftRadius: '10px',
+                                                            color: '#ffffff',
+                                                            fontWeight: '900',
+                                                            fontSize: '1.1rem',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            padding: '0 1rem',
+                                                            userSelect: 'none'
+                                                        }}>
+                                                            {prefixSeleccionado}
+                                                        </div>
+                                                    )}
+                                                    <input 
+                                                        type="text"
+                                                        value={identificacionCliente}
+                                                        onChange={e => setIdentificacionCliente(e.target.value)}
+                                                        placeholder={tipoCliente === 'Persona Natural' ? '12345678' : '12345678-9'}
+                                                        className="s-input"
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.03)',
+                                                            border: '1px solid rgba(255,255,255,0.08)',
+                                                            color: '#fff',
+                                                            padding: '0.7rem 1rem',
+                                                            borderRadius: '10px',
+                                                            borderTopLeftRadius: prefixSeleccionado ? '0' : '10px',
+                                                            borderBottomLeftRadius: prefixSeleccionado ? '0' : '10px',
+                                                            fontSize: '1.1rem',
+                                                            fontWeight: '800',
+                                                            flex: 1,
+                                                            outline: 'none'
+                                                        }}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NÚMERO CELULAR</label>
+                                                <input 
+                                                    type="tel"
+                                                    value={celularCliente}
+                                                    onChange={e => setCellularCliente(e.target.value)}
+                                                    placeholder="Ej: 0412-1234567"
+                                                    className="s-input"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        color: '#fff',
+                                                        padding: '0.7rem 1rem',
+                                                        borderRadius: '10px',
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '800',
+                                                        width: '100%',
+                                                        outline: 'none'
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>DIRECCIÓN CORTA</label>
+                                                <input 
+                                                    type="text"
+                                                    value={direccionCliente}
+                                                    onChange={e => setDireccionCliente(e.target.value)}
+                                                    placeholder="Ingresar Dirección"
+                                                    className="s-input"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        color: '#fff',
+                                                        padding: '0.7rem 1rem',
+                                                        borderRadius: '10px',
+                                                        fontSize: '1.1rem',
+                                                        fontWeight: '800',
+                                                        width: '100%',
+                                                        outline: 'none'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                        {/* Footer */}
+                                        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'flex-end' }}>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowCustomerModal(false)} 
+                                                className="s-btn s-btn-primary" 
+                                                style={{ height: '3.2rem', fontSize: '1.1rem', fontWeight: 900, padding: '0 2rem', borderRadius: '10px' }}
+                                            >
+                                                ✓ CONFIRMAR DATOS
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* COLUMNA DERECHA: DESGLOSE DE PAGO */}
                         <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

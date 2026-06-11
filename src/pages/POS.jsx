@@ -790,7 +790,7 @@ const PaymentModal = ({
                 transition={{ duration: 0.2 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                    width: "55rem",
+                    width: tieneVuelto ? "90rem" : "55rem",
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
@@ -799,7 +799,8 @@ const PaymentModal = ({
                     border: '2px solid var(--s-neon)',
                     boxShadow: '0 0 60px rgba(0,230,118,0.2)',
                     zIndex: 1000,
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
             >
                 <div style={{ padding: '1.25rem 2.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
@@ -815,7 +816,7 @@ const PaymentModal = ({
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ padding: '1.25rem 2.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ padding: '1.25rem 2.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: tieneVuelto ? 'row' : 'column', gap: '2.5rem' }}>
                         {/* SUB-MODAL PARA INGRESAR DATOS DEL CLIENTE */}
                         <AnimatePresence>
                             {showCustomerModal && (
@@ -1108,8 +1109,134 @@ const PaymentModal = ({
                             )}
                         </AnimatePresence>
 
-                        {/* DESGLOSE DE PAGO */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {/* COLUMNA IZQUIERDA: SECCIÓN DE VUELTO (Solo cuando tieneVuelto es true) */}
+                        {tieneVuelto && (
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                style={{
+                                    flex: 1,
+                                    borderRight: '1px solid rgba(255,255,255,0.06)',
+                                    paddingRight: '2.5rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1.25rem'
+                                }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
+                                    <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
+                                    <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff' }}>
+                                        TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
+                                    </span>
+                                </div>
+
+                                {vueltoCuadrado ? (
+                                    <div style={{ 
+                                        background: 'rgba(0,230,118,0.05)', 
+                                        border: '1px solid rgba(0,230,118,0.15)', 
+                                        borderRadius: '10px', 
+                                        padding: '1.25rem', 
+                                        textAlign: 'center' 
+                                    }}>
+                                        <div style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
+                                            ✓ MONTO DE VUELTO CUADRADO EXACTAMENTE
+                                        </div>
+                                    </div>
+                                ) : (
+                                    (() => {
+                                        const diff = vueltoTeoricoUSD - totalVueltoUSD;
+                                        const isExcedido = diff < 0;
+                                        const absDiffUSD = Math.abs(diff);
+                                        const absDiffBS = absDiffUSD * tasaBcv;
+                                        
+                                        return (
+                                            <div style={{ 
+                                                background: isExcedido ? 'rgba(255,145,0,0.05)' : 'rgba(255,49,49,0.05)', 
+                                                border: `1px solid ${isExcedido ? 'rgba(255,145,0,0.15)' : 'rgba(255,49,49,0.15)'}`, 
+                                                borderRadius: '10px', 
+                                                padding: '1.25rem', 
+                                                textAlign: 'center' 
+                                            }}>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.15em', marginBottom: '0.35rem' }}>
+                                                    {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
+                                                </div>
+                                                <div style={{ fontSize: '3rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
+                                                    {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
+                                                </div>
+                                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginTop: '0.35rem' }}>
+                                                    {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()
+                                )}
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                                    <div>
+                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (USD)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900, fontSize: '1.4rem' }}>$</div>
+                                            <CurrencyInput
+                                                currency="USD"
+                                                value={vueltoAsignado.usd}
+                                                onChange={v => handleVueltoChange('usd', v)}
+                                                placeholder="0.00"
+                                                color="#00e676"
+                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (BS)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
+                                            <BsInput
+                                                value={vueltoAsignado.bs}
+                                                onChange={v => handleVueltoChange('bs', v)}
+                                                placeholder="0,00"
+                                                color="#2196f3"
+                                                disabled={tasaBcv === 0}
+                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.5rem' }}>VUELTO PAGO MÓVIL (BS)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
+                                            <BsInput
+                                                value={vueltoAsignado.pago_movil}
+                                                onChange={v => handleVueltoChange('pago_movil', v)}
+                                                placeholder="0,00"
+                                                color="#ff9800"
+                                                disabled={tasaBcv === 0}
+                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.5rem' }}>VUELTO TRANSFERENCIA (BS)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
+                                            <BsInput
+                                                value={vueltoAsignado.transferencia}
+                                                onChange={v => handleVueltoChange('transferencia', v)}
+                                                placeholder="0,00"
+                                                color="#00bcd4"
+                                                disabled={tasaBcv === 0}
+                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* COLUMNA DERECHA: DESGLOSE DE PAGO */}
+                        <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                                 {/* TOTAL A PAGAR CARD */}
                                 <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1rem', textAlign: 'center' }}>
@@ -1178,133 +1305,6 @@ const PaymentModal = ({
                                 })}
                             </div>
 
-                            {/* SECCIÓN DE VUELTO: Se activa únicamente si la suma de pagos supera el total */}
-                            {tieneVuelto && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    style={{
-                                        border: '1px dashed var(--s-neon)',
-                                        background: 'rgba(0,230,118,0.02)',
-                                        borderRadius: '14px',
-                                        padding: '1.5rem',
-                                        marginTop: '0.75rem',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '1.25rem'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff' }}>
-                                            TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
-                                        </span>
-                                    </div>
-
-                                    {vueltoCuadrado ? (
-                                        <div style={{ 
-                                            background: 'rgba(0,230,118,0.05)', 
-                                            border: '1px solid rgba(0,230,118,0.15)', 
-                                            borderRadius: '10px', 
-                                            padding: '1.25rem', 
-                                            textAlign: 'center' 
-                                        }}>
-                                            <div style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
-                                                ✓ MONTO DE VUELTO CUADRADO EXACTAMENTE
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        (() => {
-                                            const diff = vueltoTeoricoUSD - totalVueltoUSD;
-                                            const isExcedido = diff < 0;
-                                            const absDiffUSD = Math.abs(diff);
-                                            const absDiffBS = absDiffUSD * tasaBcv;
-                                            
-                                            return (
-                                                <div style={{ 
-                                                    background: isExcedido ? 'rgba(255,145,0,0.05)' : 'rgba(255,49,49,0.05)', 
-                                                    border: `1px solid ${isExcedido ? 'rgba(255,145,0,0.15)' : 'rgba(255,49,49,0.15)'}`, 
-                                                    borderRadius: '10px', 
-                                                    padding: '1.25rem', 
-                                                    textAlign: 'center' 
-                                                }}>
-                                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.15em', marginBottom: '0.35rem' }}>
-                                                        {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
-                                                    </div>
-                                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
-                                                        {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
-                                                    </div>
-                                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginTop: '0.35rem' }}>
-                                                        {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()
-                                    )}
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                                        <div>
-                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (USD)</label>
-                                            <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900, fontSize: '1.4rem' }}>$</div>
-                                                <CurrencyInput
-                                                    currency="USD"
-                                                    value={vueltoAsignado.usd}
-                                                    onChange={v => handleVueltoChange('usd', v)}
-                                                    placeholder="0.00"
-                                                    color="#00e676"
-                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (BS)</label>
-                                            <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
-                                                <BsInput
-                                                    value={vueltoAsignado.bs}
-                                                    onChange={v => handleVueltoChange('bs', v)}
-                                                    placeholder="0,00"
-                                                    color="#2196f3"
-                                                    disabled={tasaBcv === 0}
-                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.5rem' }}>VUELTO PAGO MÓVIL (BS)</label>
-                                            <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
-                                                <BsInput
-                                                    value={vueltoAsignado.pago_movil}
-                                                    onChange={v => handleVueltoChange('pago_movil', v)}
-                                                    placeholder="0,00"
-                                                    color="#ff9800"
-                                                    disabled={tasaBcv === 0}
-                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.5rem' }}>VUELTO TRANSFERENCIA (BS)</label>
-                                            <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
-                                                <BsInput
-                                                    value={vueltoAsignado.transferencia}
-                                                    onChange={v => handleVueltoChange('transferencia', v)}
-                                                    placeholder="0,00"
-                                                    color="#00bcd4"
-                                                    disabled={tasaBcv === 0}
-                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
                         </div>
                     </div>
 

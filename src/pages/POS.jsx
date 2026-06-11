@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign } from 'lucide-react'
+import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../context/ToastContext'
 import { useDatabase } from '../hooks/useDatabase'
@@ -673,11 +673,16 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
     const handleChange = (id, value) => setPagos(prev => ({ ...prev, [id]: String(value) }))
     const handleVueltoChange = (key, value) => setVueltoAsignado(prev => ({ ...prev, [key]: String(value) }))
 
+    const idPrefix = tipoCliente === 'Persona Natural' ? 'V-' : (tipoCliente === 'Persona Juridica' ? 'J-' : '')
+
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!puedeConfirmar || loading) return
         setLoading(true)
         try {
+            // Clean up any manually typed prefix to avoid double prefixes
+            const cleanId = String(identificacionCliente).replace(/^[vjVJ]-?/, '').trim()
             await onSubmit({
                 pagos,
                 vuelto_entregado_usd: parseFloat(String(vueltoAsignado.usd || '0').replace(',', '.')) || 0,
@@ -687,7 +692,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 vuelto_transferencia: parseFloat(String(vueltoAsignado.transferencia || '0').replace(',', '.')) || 0,
                 cliente_tipo: tipoCliente,
                 cliente_nombre: nombreCliente,
-                cliente_identificacion: identificacionCliente,
+                cliente_identificacion: idPrefix + cleanId,
                 cliente_celular: celularCliente,
                 cliente_direccion: direccionCliente
             })
@@ -724,40 +729,41 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 transition={{ duration: 0.2 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                    width: "60rem",
+                    width: "90rem",
                     maxHeight: '95vh',
                     display: 'flex',
                     flexDirection: 'column',
                     background: '#1a1a1a',
-                    borderRadius: '16px',
-                    border: '1px solid var(--s-neon)',
-                    boxShadow: '0 0 40px rgba(0,230,118,0.15)',
+                    borderRadius: '24px',
+                    border: '2px solid var(--s-neon)',
+                    boxShadow: '0 0 60px rgba(0,230,118,0.2)',
                     zIndex: 1000,
                     overflow: 'hidden'
                 }}
             >
-                <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <div style={{ padding: '2rem 3rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 1000, color: '#fff', margin: 0 }}>DESGLOSE DE PAGO</h2>
-                            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--s-neon)', margin: '0.2rem 0 0 0' }}>MULTIMÉTODO</p>
+                            <h2 style={{ fontSize: '2.4rem', fontWeight: 1000, color: '#fff', margin: 0 }}>DESGLOSE DE PAGO</h2>
+                            <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--s-neon)', margin: '0.3rem 0 0 0' }}>MULTIMÉTODO</p>
                         </div>
                         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0.5rem' }}>
-                            <X size={24} />
+                            <X size={36} />
                         </button>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ padding: '1.5rem 2rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '2rem' }}>
+                    <div style={{ padding: '2rem 3rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '3rem' }}>
                         {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '2rem' }}>
-                            <h3 style={{ fontSize: '1.15rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', margin: 0 }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.75rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '3rem' }}>
+                            <h3 style={{ fontSize: '1.8rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <User size={28} style={{ color: 'var(--s-neon)' }} />
                                 DATOS DEL CLIENTE
                             </h3>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
                                 <select 
                                     value={tipoCliente} 
                                     onChange={e => {
@@ -769,9 +775,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '0.85rem 1rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.95rem',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontSize: '1.2rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none',
@@ -784,8 +790,8 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 </select>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
                                 <input 
                                     type="text"
                                     value={nombreCliente}
@@ -796,9 +802,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '0.85rem 1rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.95rem',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontSize: '1.2rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none'
@@ -807,46 +813,53 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
                                     {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
                                 </label>
-                                <input 
-                                    type="text"
-                                    value={identificacionCliente}
-                                    onChange={e => setIdentificacionCliente(e.target.value)}
-                                    placeholder={tipoCliente === 'Persona Natural' ? 'V-12345678' : 'J-12345678-9'}
-                                    className="s-input"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        color: '#fff',
-                                        padding: '0.85rem 1rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.95rem',
-                                        fontWeight: '800',
-                                        width: '100%',
-                                        outline: 'none'
-                                    }}
-                                    required
-                                />
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    {idPrefix && (
+                                        <span style={{ position: 'absolute', left: '1.25rem', color: 'var(--s-neon)', fontWeight: '900', fontSize: '1.2rem' }}>
+                                            {idPrefix}
+                                        </span>
+                                    )}
+                                    <input 
+                                        type="text"
+                                        value={identificacionCliente}
+                                        onChange={e => setIdentificacionCliente(e.target.value)}
+                                        placeholder={tipoCliente === 'Persona Natural' ? '12345678' : '12345678-9'}
+                                        className="s-input"
+                                        style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            color: '#fff',
+                                            padding: idPrefix ? '1rem 1.25rem 1rem 3rem' : '1rem 1.25rem',
+                                            borderRadius: '10px',
+                                            fontSize: '1.2rem',
+                                            fontWeight: '800',
+                                            width: '100%',
+                                            outline: 'none'
+                                        }}
+                                        required
+                                    />
+                                </div>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NÚMERO CELULAR</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NÚMERO CELULAR</label>
                                 <input 
                                     type="tel"
                                     value={celularCliente}
-                                    onChange={e => setCelularCliente(e.target.value)}
+                                    onChange={e => setCellularCliente(e.target.value)}
                                     placeholder="Ej: 0412-1234567"
                                     className="s-input"
                                     style={{
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '0.85rem 1rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.95rem',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontSize: '1.2rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none'
@@ -854,21 +867,21 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>DIRECCIÓN CORTA</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>DIRECCIÓN CORTA</label>
                                 <input 
                                     type="text"
                                     value={direccionCliente}
                                     onChange={e => setDireccionCliente(e.target.value)}
-                                    placeholder="Ej: Sabana Grande, Calle 3"
+                                    placeholder="Ingresar Dirección"
                                     className="s-input"
                                     style={{
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '0.85rem 1rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.95rem',
+                                        padding: '1rem 1.25rem',
+                                        borderRadius: '10px',
+                                        fontSize: '1.2rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none'
@@ -878,22 +891,25 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                         </div>
 
                         {/* COLUMNA DERECHA: DESGLOSE DE PAGO */}
-                        <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '10px', padding: '1rem', textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#888', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>TOTAL A PAGAR</div>
-                                <div style={{ fontSize: '2.4rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
+                        <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1.75rem', textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>TOTAL A PAGAR</div>
+                                <div style={{ fontSize: '4.5rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
+                                <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.85rem" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1.25rem" }}>
                                 {METODOS_PAGO.map(({ id, nombre, icon: Icon, color, prefix, type: pType }) => {
                                     const isBsDisabled = tasaBcv === 0 && pType === 'bs'
                                     return (
                                         <div key={id}>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color, letterSpacing: '0.1em', display: 'block', marginBottom: '0.35rem' }}>{nombre}</label>
+                                            <label style={{ fontSize: '1.3rem', fontWeight: 800, color, letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                <Icon size={20} style={{ color }} />
+                                                {nombre}
+                                            </label>
                                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                                 <div style={{ position: 'relative', flex: 1 }}>
-                                                    <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color, fontWeight: 900, fontSize: '1.2rem', zIndex: 1 }}>{prefix}</div>
+                                                    <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color, fontWeight: 900, fontSize: '1.5rem', zIndex: 1 }}>{prefix}</div>
                                                     {pType === 'bs' ? (
                                                         <BsInput
                                                             value={pagos[id]}
@@ -901,7 +917,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                                             disabled={isBsDisabled}
                                                             placeholder="0,00"
                                                             color={color}
-                                                            style={{ fontSize: '1rem', padding: '0.85rem 1rem 0.85rem 2.5rem' }}
+                                                            style={{ fontSize: '1.3rem', padding: '1rem 1.25rem 1rem 3.2rem' }}
                                                         />
                                                     ) : (
                                                         <CurrencyInput
@@ -911,7 +927,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                                             placeholder="0.00"
                                                             disabled={isBsDisabled}
                                                             color={color}
-                                                            style={{ fontSize: '1rem', padding: '0.85rem 1rem 0.85rem 2.5rem' }}
+                                                            style={{ fontSize: '1.3rem', padding: '1rem 1.25rem 1rem 3.2rem' }}
                                                         />
                                                     )}
                                                 </div>
@@ -929,17 +945,17 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                     style={{
                                         border: '1px dashed var(--s-neon)',
                                         background: 'rgba(0,230,118,0.02)',
-                                        borderRadius: '10px',
-                                        padding: '1.25rem',
-                                        marginTop: '0.5rem',
+                                        borderRadius: '14px',
+                                        padding: '1.5rem',
+                                        marginTop: '0.75rem',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        gap: '0.85rem'
+                                        gap: '1.25rem'
                                     }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#fff' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff' }}>
                                             TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
                                         </span>
                                     </div>
@@ -949,10 +965,10 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                             background: 'rgba(0,230,118,0.05)', 
                                             border: '1px solid rgba(0,230,118,0.15)', 
                                             borderRadius: '10px', 
-                                            padding: '1rem', 
+                                            padding: '1.25rem', 
                                             textAlign: 'center' 
                                         }}>
-                                            <div style={{ fontSize: '1.1rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
+                                            <div style={{ fontSize: '1.3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
                                                 ✓ MONTO DE VUELTO CUADRADO EXACTAMENTE
                                             </div>
                                         </div>
@@ -968,16 +984,16 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                                     background: isExcedido ? 'rgba(255,145,0,0.05)' : 'rgba(255,49,49,0.05)', 
                                                     border: `1px solid ${isExcedido ? 'rgba(255,145,0,0.15)' : 'rgba(255,49,49,0.15)'}`, 
                                                     borderRadius: '10px', 
-                                                    padding: '1rem', 
+                                                    padding: '1.25rem', 
                                                     textAlign: 'center' 
                                                 }}>
-                                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.15em', marginBottom: '0.35rem' }}>
                                                         {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
                                                     </div>
-                                                    <div style={{ fontSize: '2.4rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
+                                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
                                                         {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
                                                     </div>
-                                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>
+                                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginTop: '0.35rem' }}>
                                                         {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
                                                     </div>
                                                 </div>
@@ -985,63 +1001,63 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         })()
                                     )}
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                                         <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.35rem' }}>VUELTO EN EFECTIVO (USD)</label>
+                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (USD)</label>
                                             <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900 }}>$</div>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900, fontSize: '1.4rem' }}>$</div>
                                                 <CurrencyInput
                                                     currency="USD"
                                                     value={vueltoAsignado.usd}
                                                     onChange={v => handleVueltoChange('usd', v)}
                                                     placeholder="0.00"
                                                     color="#00e676"
-                                                    style={{ fontSize: '1rem', padding: '0.85rem 1rem 0.85rem 2.5rem' }}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.35rem' }}>VUELTO EN EFECTIVO (BS)</label>
+                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (BS)</label>
                                             <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900 }}>Bs</div>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
                                                 <BsInput
                                                     value={vueltoAsignado.bs}
                                                     onChange={v => handleVueltoChange('bs', v)}
                                                     placeholder="0,00"
                                                     color="#2196f3"
                                                     disabled={tasaBcv === 0}
-                                                    style={{ fontSize: '1rem', padding: '0.85rem 1rem 0.85rem 2.5rem' }}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.35rem' }}>VUELTO PAGO MÓVIL (BS)</label>
+                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.5rem' }}>VUELTO PAGO MÓVIL (BS)</label>
                                             <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900 }}>Bs</div>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
                                                 <BsInput
                                                     value={vueltoAsignado.pago_movil}
                                                     onChange={v => handleVueltoChange('pago_movil', v)}
                                                     placeholder="0,00"
                                                     color="#ff9800"
                                                     disabled={tasaBcv === 0}
-                                                    style={{ fontSize: '1rem', padding: '0.85rem 1rem 0.85rem 2.5rem' }}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.35rem' }}>VUELTO TRANSFERENCIA (BS)</label>
+                                            <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.5rem' }}>VUELTO TRANSFERENCIA (BS)</label>
                                             <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900 }}>Bs</div>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
                                                 <BsInput
                                                     value={vueltoAsignado.transferencia}
                                                     onChange={v => handleVueltoChange('transferencia', v)}
                                                     placeholder="0,00"
                                                     color="#00bcd4"
                                                     disabled={tasaBcv === 0}
-                                                    style={{ fontSize: '1rem', padding: '0.85rem 1rem 0.85rem 2.5rem' }}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
                                                 />
                                             </div>
                                         </div>
@@ -1053,17 +1069,17 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 type="submit"
                                 disabled={!puedeConfirmar || loading}
                                 style={{
-                                    height: '4rem',
-                                    fontSize: '1.1rem',
+                                    height: '5.5rem',
+                                    fontSize: '1.5rem',
                                     fontWeight: 900,
-                                    borderRadius: '10px',
+                                    borderRadius: '12px',
                                     cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
                                     border: 'none',
                                     background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
                                     color: puedeConfirmar ? '#000' : '#555',
                                     opacity: loading ? 0.7 : 1,
                                     letterSpacing: '0.1em',
-                                    marginTop: '0.5rem'
+                                    marginTop: '1rem'
                                 }}
                             >
                                 {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}

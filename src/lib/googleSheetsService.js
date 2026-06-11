@@ -5,7 +5,7 @@
  */
 
 const getWebAppUrl = () => {
-    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbyRPfpWA1pT88lxy079DQTEulSpxb-Rb3-DuwPNc9L2Oi--BEbLb0OJH9vA4xqrZPHc/exec';
+    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbxDnDEeDVh62Zg_kXEhPpE5NQSwa8u_XedK-VBPKsORdjUv7Z4bxR-z_DAembPaqXE18Q/exec';
     return String(url || '').trim().replace(/\s+/g, '').replace(/\/+$/, '');
 };
 

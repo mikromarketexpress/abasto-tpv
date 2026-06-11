@@ -247,7 +247,30 @@ function saveSale(ss, data) {
       Number(data.vuelto_pago_movil) || 0,
       Number(data.vuelto_transferencia) || 0
     ]);
-    return { success: true };
+    
+    // ACTUALIZAR EL STOCK EN LA HOJA Productos
+    var prodSheet = ss.getSheetByName('Productos');
+    if (prodSheet && prodSheet.getLastRow() > 1 && data.productos) {
+      var prodIds = prodSheet.getRange(2, 1, prodSheet.getLastRow() - 1, 1).getValues().map(function(r) { return String(r[0]).trim(); });
+      var headersProd = prodSheet.getRange(1, 1, 1, prodSheet.getLastColumn()).getValues()[0].map(function(h) { return String(h).toLowerCase().trim(); });
+      var stockColIndex = headersProd.indexOf('stock') + 1;
+      
+      if (stockColIndex > 0) {
+        var soldList = Array.isArray(data.productos) ? data.productos : JSON.parse(data.productos || '[]');
+        soldList.forEach(function(soldItem) {
+          var soldId = String(soldItem.id).trim();
+          var quantity = parseFloat(soldItem.cantidad) || 0;
+          var rowIndex = prodIds.indexOf(soldId);
+          if (rowIndex > -1 && quantity > 0) {
+            var cell = prodSheet.getRange(rowIndex + 2, stockColIndex);
+            var currentStock = parseFloat(cell.getValue()) || 0;
+            cell.setValue(Math.max(0, currentStock - quantity));
+          }
+        });
+      }
+    }
+    
+    return { success: true, data: getAllSheetsData() };
   } catch(e) { return { success: false, error: e.message }; }
 }
 

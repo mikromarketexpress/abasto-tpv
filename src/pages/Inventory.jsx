@@ -213,6 +213,46 @@ const LoadingOverlay = ({ isVisible, message }) => {
   );
 };
 
+const pluralizarMedida = (medida, cantidad) => {
+  const med = String(medida || "UNIDAD").toUpperCase();
+  const cant = parseFloat(cantidad) || 0;
+  if (cant === 1) {
+    if (med === "CENTIMETRO_CUBICO" || med === "CENTIMETRO CUBICO") return "CENTÍMETRO CÚBICO";
+    return med;
+  }
+  if (med === "UNIDAD") return "UNIDADES";
+  if (med === "KILOGRAMO") return "KILOGRAMOS";
+  if (med === "GRAMO") return "GRAMOS";
+  if (med === "MILIGRAMO") return "MILIGRAMOS";
+  if (med === "LITRO") return "LITROS";
+  if (med === "MILILITRO") return "MILILITROS";
+  if (med === "CENTIMETRO_CUBICO" || med === "CENTIMETRO CUBICO") return "CENTÍMETROS CÚBICOS";
+  if (med === "PAQUETE") return "PAQUETES";
+  if (med === "CAJA") return "CAJAS";
+  return med + "S";
+};
+
+const formatStockDisponible = (stock) => {
+  const stockActual = parseInt(stock) || 0;
+  return `${stockActual} UNIDAD(ES) DISPONIBLE(S)`;
+};
+
+const formatDescripcionTecnica = (p) => {
+  const desc = String(p.descripcion_corta || "").trim().toUpperCase();
+  const numUnid = parseFloat(p.numero_unid) || 1;
+  const unidadMed = String(p.unidad_medida || "UNIDAD").toUpperCase();
+  
+  const unitFormatted = pluralizarMedida(unidadMed, numUnid);
+  const showUnidades = numUnid > 1 || ["KILOGRAMO", "GRAMO", "MILIGRAMO", "LITRO", "MILILITRO", "CENTIMETRO_CUBICO", "CENTIMETRO CUBICO"].includes(unidadMed);
+  
+  if (showUnidades) {
+    const unidStr = `${numUnid} ${unitFormatted}`;
+    return desc ? `${desc} - ${unidStr}` : unidStr;
+  }
+  
+  return desc || "—";
+};
+
 const Inventory = () => {
   const {
     isReady,
@@ -899,7 +939,7 @@ const Inventory = () => {
                         color: "#fff",
                       }}
                     >
-                      {String(p.descripcion_corta || "—").toUpperCase()}
+                      {formatDescripcionTecnica(p)}
                     </span>
                   </div>
                   <div
@@ -927,7 +967,7 @@ const Inventory = () => {
                   </div>
                   <div className="s-liquid-row__stock-bar">
                     <span style={{ color: "#fff", fontSize: "0.7rem" }}>
-                      {stockActual} {unidadMed.toUpperCase()}
+                      {formatStockDisponible(stockActual)}
                     </span>
                     <div className="s-liquid-row__bar-track">
                       <motion.div
@@ -1290,9 +1330,11 @@ const Inventory = () => {
                       className="s-input"
                       type="number"
                       value={editForm.stock ?? 0}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, stock: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setEditForm({ ...editForm, stock: val === "" ? "" : parseInt(val) });
+                      }}
+                      onFocus={(e) => e.target.select()}
                       style={{
                         textAlign: "center",
                         fontSize: "1.2rem",
@@ -1308,12 +1350,14 @@ const Inventory = () => {
                       className="s-input"
                       type="number"
                       value={editForm.numero_unid ?? 1}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = e.target.value;
                         setEditForm({
                           ...editForm,
-                          numero_unid: e.target.value,
-                        })
-                      }
+                          numero_unid: val === "" ? "" : parseFloat(val),
+                        });
+                      }}
+                      onFocus={(e) => e.target.select()}
                       style={{ textAlign: "center" }}
                     />
                   </div>
@@ -1331,13 +1375,15 @@ const Inventory = () => {
                         })
                       }
                     >
-                      <option value="UNIDAD">UNIDAD</option>
-                      <option value="KILOGRAMO">KILOGRAMO</option>
-                      <option value="GRAMO">GRAMO</option>
-                      <option value="LITRO">LITRO</option>
-                      <option value="MILILITRO">MILILITRO</option>
-                      <option value="PAQUETE">PAQUETE</option>
-                      <option value="CAJA">CAJA</option>
+                      <option value="UNIDAD">UNIDAD(ES)</option>
+                      <option value="KILOGRAMO">KILOGRAMO(S)</option>
+                      <option value="GRAMO">GRAMO(S)</option>
+                      <option value="MILIGRAMO">MILIGRAMO(S)</option>
+                      <option value="LITRO">LITRO(S)</option>
+                      <option value="MILILITRO">MILILITRO(S)</option>
+                      <option value="CENTIMETRO_CUBICO">CENTÍMETRO(S) CÚBICO(S) (CC)</option>
+                      <option value="PAQUETE">PAQUETE(S)</option>
+                      <option value="CAJA">CAJA(S)</option>
                     </select>
                   </div>
                 </div>
@@ -1357,12 +1403,14 @@ const Inventory = () => {
                       className="s-input"
                       type="number"
                       value={editForm.stock_minimo ?? 5}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const val = e.target.value;
                         setEditForm({
                           ...editForm,
-                          stock_minimo: e.target.value,
-                        })
-                      }
+                          stock_minimo: val === "" ? "" : parseInt(val),
+                        });
+                      }}
+                      onFocus={(e) => e.target.select()}
                       style={{ textAlign: "center" }}
                     />
                   </div>

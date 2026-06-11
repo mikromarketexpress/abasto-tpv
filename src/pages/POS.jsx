@@ -23,6 +23,41 @@ const METODOS_PAGO = [
     { id: 'transferencia', nombre: 'TRANSFERENCIA', icon: ArrowLeftRight, color: '#00bcd4', prefix: 'Bs', type: 'bs' }
 ]
 
+const pluralizarMedida = (medida, cantidad) => {
+    const med = String(medida || 'UNIDAD').toUpperCase()
+    const cant = parseFloat(cantidad) || 0
+    if (cant === 1) {
+        if (med === 'CENTIMETRO_CUBICO' || med === 'CENTIMETRO CUBICO') return 'CENTÍMETRO CÚBICO'
+        return med
+    }
+    if (med === 'UNIDAD') return 'UNIDADES'
+    if (med === 'KILOGRAMO') return 'KILOGRAMOS'
+    if (med === 'GRAMO') return 'GRAMOS'
+    if (med === 'MILIGRAMO') return 'MILIGRAMOS'
+    if (med === 'LITRO') return 'LITROS'
+    if (med === 'MILILITRO') return 'MILILITROS'
+    if (med === 'CENTIMETRO_CUBICO' || med === 'CENTIMETRO CUBICO') return 'CENTÍMETROS CÚBICOS'
+    if (med === 'PAQUETE') return 'PAQUETES'
+    if (med === 'CAJA') return 'CAJAS'
+    return med + 'S'
+}
+
+const formatDescripcionTecnica = (p) => {
+    const desc = String(p.descripcion_corta || '').trim().toUpperCase()
+    const numUnid = parseFloat(p.numero_unid) || 1
+    const unidadMed = String(p.unidad_medida || 'UNIDAD').toUpperCase()
+    
+    const unitFormatted = pluralizarMedida(unidadMed, numUnid)
+    const showUnidades = numUnid > 1 || ['KILOGRAMO', 'GRAMO', 'MILIGRAMO', 'LITRO', 'MILILITRO', 'CENTIMETRO_CUBICO', 'CENTIMETRO CUBICO'].includes(unidadMed)
+    
+    if (showUnidades) {
+        const unidStr = `${numUnid} ${unitFormatted}`
+        return desc ? `${desc} - ${unidStr}` : unidStr
+    }
+    
+    return desc || '—'
+}
+
 const POS = () => {
     const { isReady, productos: dbProductos, categorias: dbCategorias, refresh, saveVenta } = useDatabase()
     const { sesionActiva, tasaBCV, isCajaAbierta, setTasaBCV } = useCaja()
@@ -150,7 +185,8 @@ const POS = () => {
             const saleId = crypto.randomUUID()
             const saleFecha = new Date().toISOString()
 
-            const result = await saveVenta({
+            // Enviar la venta a Google Sheets en segundo plano (no bloquea la UI)
+            saveVenta({
                 id: saleId,
                 productos: cart.map(item => ({
                     id: item.id,
@@ -176,12 +212,17 @@ const POS = () => {
                 tasa_bcv: tasaActual,
                 sesion_caja_id: sesionActiva?.id || null,
                 fecha: saleFecha
+            }).then(result => {
+                if (result && !result.success) {
+                    showToast(`⚠️ NO SINCRONIZÓ EN GOOGLE SHEETS: ${result.error || 'FALLO'}`, 'warning')
+                } else {
+                    showToast(`✅ VENTA SINCRONIZADA CON ÉXITO`, 'success')
+                }
+            }).catch(err => {
+                showToast(`⚠️ ERROR DE CONEXIÓN AL SINCRONIZAR VENTA`, 'warning')
             })
 
-            if (result && !result.success) {
-                throw new Error(result.error || 'FALLO EN EL SERVIDOR AL REGISTRAR LA VENTA')
-            }
-
+            // Inmediatamente abrir ticket, limpiar carrito y cerrar modal
             abrirTicketImpresion({
                 idVenta: saleId,
                 fecha: saleFecha,
@@ -195,6 +236,19 @@ const POS = () => {
                 totalUSD: total,
                 totalBS: totalBs,
                 tasaBCV: tasaActual,
+            })
+
+            // Decrementar optimistamente el stock local
+            setProducts(prevProducts => {
+                return prevProducts.map(p => {
+                    const cartItem = cart.find(item => item.id === p.id)
+                    if (cartItem) {
+                        const currentStock = parseInt(p.stock) || 0
+                        const soldQty = cartItem.cantidad
+                        return { ...p, stock: Math.max(0, currentStock - soldQty) }
+                    }
+                    return p
+                })
             })
 
             showToast(`VENTA REGISTRADA - TASA: BS ${formatBS(tasaActual)}`)
@@ -289,7 +343,10 @@ const POS = () => {
                             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}
                         >
                             {filtered.map((p, idx) => {
-                                const stock = parseInt(p.stock) || 0
+                                const stockOriginal = parseInt(p.stock) || 0
+                                const cartItem = cart.find(item => item.id === p.id)
+                                const cartQty = cartItem ? cartItem.cantidad : 0
+                                const stock = Math.max(0, stockOriginal - cartQty)
                                 const stockMin = parseInt(p.stock_minimo) || 5
                                 const isLowStock = stock <= stockMin
                                 const isOutOfStock = stock <= 0
@@ -355,7 +412,7 @@ const POS = () => {
                                             </h3>
 
                                             <p style={{ fontSize: '0.6rem', fontWeight: 700, color: '#fff', opacity: 0.6, textTransform: 'uppercase' }}>
-                                                {String(p.descripcion_corta || '—').toUpperCase()}
+                                                {formatDescripcionTecnica(p)}
                                             </p>
 
                                             <p style={{ fontSize: '0.7rem', fontWeight: 700, color: '#fff', opacity: 0.5, textTransform: 'uppercase' }}>
@@ -557,6 +614,12 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
         METODOS_PAGO.forEach(m => init[m.id] = '')
         return init
     })
+    const [vueltoAsignado, setVueltoAsignado] = useState({
+        usd: '',
+        bs: '',
+        pago_movil: '',
+        transferencia: ''
+    })
     const [loading, setLoading] = useState(false)
 
     const totalPagadoUSD = useMemo(() => {
@@ -567,10 +630,32 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
         }, 0)
     }, [pagos, tasaBcv])
 
+    const totalVueltoUSD = useMemo(() => {
+        const tasaValida = tasaBcv > 0 ? tasaBcv : 1
+        const usdVal = parseFloat(String(vueltoAsignado.usd || '0').replace(',', '.')) || 0
+        const bsVal = parseFloat(String(vueltoAsignado.bs || '0').replace(',', '.')) || 0
+        const pmVal = parseFloat(String(vueltoAsignado.pago_movil || '0').replace(',', '.')) || 0
+        const tfVal = parseFloat(String(vueltoAsignado.transferencia || '0').replace(',', '.')) || 0
+        return usdVal + ((bsVal + pmVal + tfVal) / tasaValida)
+    }, [vueltoAsignado, tasaBcv])
+
+    // El vuelto teórico total que el cliente debe recibir en USD
+    const vueltoTeoricoUSD = Math.max(0, totalPagadoUSD - total)
+    const vueltoTeoricoBS = vueltoTeoricoUSD * tasaBcv
+
+    // El monto que falta por pagar (si lo pagado es menor al total)
     const falta = Math.max(0, total - totalPagadoUSD)
-    const puedeConfirmar = totalPagadoUSD >= total - 0.01
+
+    // Si pagó de más, debemos validar que la suma declarada de los vueltos (USD/BS/PM/TF) coincida exactamente con el vuelto teórico.
+    // Damos una tolerancia de 0.01 USD para evitar problemas de redondeo de punto flotante.
+    const tieneVuelto = totalPagadoUSD > total + 0.005
+    const vueltoCuadrado = !tieneVuelto || Math.abs(totalVueltoUSD - vueltoTeoricoUSD) < 0.015
+
+    // El botón se habilita si se pagó lo suficiente y, en caso de haber vuelto, éste ha sido desglosado exactamente.
+    const puedeConfirmar = totalPagadoUSD >= total - 0.015 && vueltoCuadrado
 
     const handleChange = (id, value) => setPagos(prev => ({ ...prev, [id]: String(value) }))
+    const handleVueltoChange = (key, value) => setVueltoAsignado(prev => ({ ...prev, [key]: String(value) }))
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -579,11 +664,11 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
         try {
             await onSubmit({
                 pagos,
-                vuelto_entregado_usd: falta > 0 ? 0 : Math.max(0, totalPagadoUSD - total),
-                vuelto_entregado_bs: 0,
-                vuelto_efectivo_bs: 0,
-                vuelto_pago_movil: 0,
-                vuelto_transferencia: 0
+                vuelto_entregado_usd: parseFloat(String(vueltoAsignado.usd || '0').replace(',', '.')) || 0,
+                vuelto_entregado_bs: parseFloat(String(vueltoAsignado.bs || '0').replace(',', '.')) || 0,
+                vuelto_efectivo_bs: parseFloat(String(vueltoAsignado.bs || '0').replace(',', '.')) || 0,
+                vuelto_pago_movil: parseFloat(String(vueltoAsignado.pago_movil || '0').replace(',', '.')) || 0,
+                vuelto_transferencia: parseFloat(String(vueltoAsignado.transferencia || '0').replace(',', '.')) || 0
             })
         } catch (err) {
             console.error(err)
@@ -618,7 +703,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 transition={{ duration: 0.2 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                    width: '30rem',
+                    width: "38rem",
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
@@ -650,37 +735,163 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                     </div>
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {METODOS_PAGO.map(({ id, nombre, icon: Icon, color, prefix, type: pType }) => {
-                            const isBsDisabled = tasaBcv === 0 && pType === 'bs'
-                            return (
-                                <div key={id}>
-                                    <label style={{ fontSize: '0.55rem', fontWeight: 800, color, letterSpacing: '0.1em', display: 'block', marginBottom: '0.3rem' }}>{nombre}</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <div style={{ position: 'relative', flex: 1 }}>
-                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color, fontWeight: 900, fontSize: '1.1rem', zIndex: 1 }}>{prefix}</div>
-                                            {pType === 'bs' ? (
-                                                <BsInput
-                                                    value={pagos[id]}
-                                                    onChange={v => handleChange(id, v)}
-                                                    disabled={isBsDisabled}
-                                                    placeholder="0,00"
-                                                    color={color}
-                                                />
-                                            ) : (
-                                                <CurrencyInput
-                                                    currency="USD"
-                                                    value={pagos[id]}
-                                                    onChange={v => handleChange(id, v)}
-                                                    placeholder="0.00"
-                                                    disabled={isBsDisabled}
-                                                    color={color}
-                                                />
-                                            )}
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
+                            {METODOS_PAGO.map(({ id, nombre, icon: Icon, color, prefix, type: pType }) => {
+                                const isBsDisabled = tasaBcv === 0 && pType === 'bs'
+                                return (
+                                    <div key={id}>
+                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color, letterSpacing: '0.1em', display: 'block', marginBottom: '0.3rem' }}>{nombre}</label>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <div style={{ position: 'relative', flex: 1 }}>
+                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color, fontWeight: 900, fontSize: '1.1rem', zIndex: 1 }}>{prefix}</div>
+                                                {pType === 'bs' ? (
+                                                    <BsInput
+                                                        value={pagos[id]}
+                                                        onChange={v => handleChange(id, v)}
+                                                        disabled={isBsDisabled}
+                                                        placeholder="0,00"
+                                                        color={color}
+                                                    />
+                                                ) : (
+                                                    <CurrencyInput
+                                                        currency="USD"
+                                                        value={pagos[id]}
+                                                        onChange={v => handleChange(id, v)}
+                                                        placeholder="0.00"
+                                                        disabled={isBsDisabled}
+                                                        color={color}
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        {/* SECCIÓN DE VUELTO: Se activa únicamente si la suma de pagos supera el total */}
+                        {tieneVuelto && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                style={{
+                                    border: '1px dashed var(--s-neon)',
+                                    background: 'rgba(0,230,118,0.02)',
+                                    borderRadius: '10px',
+                                    padding: '1rem',
+                                    marginTop: '0.5rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.75rem'
+                                }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.5rem' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
+                                        TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
+                                    </span>
+                                </div>
+
+                                {vueltoCuadrado ? (
+                                    <div style={{ 
+                                        background: 'rgba(0,230,118,0.05)', 
+                                        border: '1px solid rgba(0,230,118,0.15)', 
+                                        borderRadius: '10px', 
+                                        padding: '1rem', 
+                                        textAlign: 'center' 
+                                    }}>
+                                        <div style={{ fontSize: '1rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
+                                            ✓ MONTO DE VUELTO CUADRADO EXACTAMENTE
+                                        </div>
+                                    </div>
+                                ) : (
+                                    (() => {
+                                        const diff = vueltoTeoricoUSD - totalVueltoUSD;
+                                        const isExcedido = diff < 0;
+                                        const absDiffUSD = Math.abs(diff);
+                                        const absDiffBS = absDiffUSD * tasaBcv;
+                                        
+                                        return (
+                                            <div style={{ 
+                                                background: isExcedido ? 'rgba(255,145,0,0.05)' : 'rgba(255,49,49,0.05)', 
+                                                border: `1px solid ${isExcedido ? 'rgba(255,145,0,0.15)' : 'rgba(255,49,49,0.15)'}`, 
+                                                borderRadius: '10px', 
+                                                padding: '1rem', 
+                                                textAlign: 'center' 
+                                            }}>
+                                                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#999', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                                                    {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
+                                                </div>
+                                                <div style={{ fontSize: '2.2rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
+                                                    {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
+                                                </div>
+                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>
+                                                    {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()
+                                )}
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.3rem' }}>VUELTO EN EFECTIVO (USD)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900 }}>$</div>
+                                            <CurrencyInput
+                                                currency="USD"
+                                                value={vueltoAsignado.usd}
+                                                onChange={v => handleVueltoChange('usd', v)}
+                                                placeholder="0.00"
+                                                color="#00e676"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.3rem' }}>VUELTO EN EFECTIVO (BS)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900 }}>Bs</div>
+                                            <BsInput
+                                                value={vueltoAsignado.bs}
+                                                onChange={v => handleVueltoChange('bs', v)}
+                                                placeholder="0,00"
+                                                color="#2196f3"
+                                                disabled={tasaBcv === 0}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.3rem' }}>VUELTO PAGO MÓVIL (BS)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900 }}>Bs</div>
+                                            <BsInput
+                                                value={vueltoAsignado.pago_movil}
+                                                onChange={v => handleVueltoChange('pago_movil', v)}
+                                                placeholder="0,00"
+                                                color="#ff9800"
+                                                disabled={tasaBcv === 0}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.3rem' }}>VUELTO TRANSFERENCIA (BS)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900 }}>Bs</div>
+                                            <BsInput
+                                                value={vueltoAsignado.transferencia}
+                                                onChange={v => handleVueltoChange('transferencia', v)}
+                                                placeholder="0,00"
+                                                color="#00bcd4"
+                                                disabled={tasaBcv === 0}
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                            )
-                        })}
+                            </motion.div>
+                        )}
 
                         <button
                             type="submit"

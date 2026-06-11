@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 const getDriveApiUrl = () => {
-    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbwIpGQZBypC2LSclLd6DXoh8391PGtscbLEoQ_k_wCAHk6fdtj90yO86Xw-3XIgVTtIqA/exec';
+    const url = import.meta?.env?.VITE_GS_WEBAPP_URL || 'https://script.google.com/macros/s/AKfycbxDnDEeDVh62Zg_kXEhPpE5NQSwa8u_XedK-VBPKsORdjUv7Z4bxR-z_DAembPaqXE18Q/exec';
     return String(url || '').trim().replace(/\s+/g, '').replace(/\/+$/, '');
 };
 const DRIVE_API_URL = getDriveApiUrl();

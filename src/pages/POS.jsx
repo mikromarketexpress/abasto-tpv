@@ -790,7 +790,7 @@ const PaymentModal = ({
                 transition={{ duration: 0.2 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                    width: "90rem",
+                    width: "55rem",
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
@@ -815,103 +815,7 @@ const PaymentModal = ({
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ padding: '1.25rem 2.5rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '2.5rem' }}>
-                        {/* COLUMNA IZQUIERDA: RESUMEN DATOS DEL CLIENTE */}
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '2.5rem' }}>
-                            <h3 style={{ fontSize: '1.6rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <User size={26} style={{ color: 'var(--s-neon)' }} />
-                                DATOS DEL CLIENTE
-                            </h3>
-                            
-                            {tieneCliente ? (
-                                <div style={{
-                                    background: 'rgba(255,255,255,0.02)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    borderRadius: '16px',
-                                    padding: '1.5rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '1rem',
-                                    flex: 1,
-                                    justifyContent: 'center'
-                                }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>TIPO</span>
-                                        <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{tipoCliente}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>NOMBRE / RAZÓN SOCIAL</span>
-                                        <span style={{ fontSize: '1.4rem', fontWeight: 1000, color: '#fff', textTransform: 'uppercase' }}>{nombreCliente}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>{tipoCliente === 'Persona Natural' ? 'CÉDULA' : 'RIF'}</span>
-                                        <span style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>{prefixSeleccionado}{identificacionCliente}</span>
-                                    </div>
-                                    {celularCliente && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>CELULAR</span>
-                                            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{celularCliente}</span>
-                                        </div>
-                                    )}
-                                    {direccionCliente && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--s-neon)' }}>DIRECCIÓN</span>
-                                            <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', textTransform: 'uppercase' }}>{direccionCliente}</span>
-                                        </div>
-                                    )}
-                                    
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowCustomerModal(true)}
-                                        className="s-btn s-btn-secondary"
-                                        style={{ marginTop: '1rem', width: '100%', height: '3.5rem', fontSize: '1.1rem', fontWeight: 900 }}
-                                    >
-                                        ✏️ MODIFICAR DATOS
-                                    </button>
-                                </div>
-                            ) : (
-                                <div style={{
-                                    border: '2px dashed rgba(255,255,255,0.1)',
-                                    borderRadius: '16px',
-                                    padding: '2rem 1.5rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '1.5rem',
-                                    flex: 1,
-                                    textAlign: 'center',
-                                    background: 'rgba(255,255,255,0.01)'
-                                }}>
-                                    <div style={{
-                                        width: '4.5rem',
-                                        height: '4.5rem',
-                                        borderRadius: '50%',
-                                        background: 'rgba(0, 230, 118, 0.05)',
-                                        border: '1px solid rgba(0, 230, 118, 0.15)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: 'var(--s-neon)'
-                                    }}>
-                                        <User size={36} />
-                                    </div>
-                                    <div>
-                                        <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff', margin: '0 0 0.5rem 0' }}>CLIENTE NO REGISTRADO</h4>
-                                        <p style={{ fontSize: '0.95rem', color: '#888', margin: 0 }}>Debes registrar los datos del cliente para poder confirmar el pago.</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowCustomerModal(true)}
-                                        className="s-btn s-btn-primary"
-                                        style={{ width: '100%', height: '3.8rem', fontSize: '1.1rem', fontWeight: 900 }}
-                                    >
-                                        👤 INGRESAR DATOS DEL CLIENTE
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
+                    <div style={{ padding: '1.25rem 2.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {/* SUB-MODAL PARA INGRESAR DATOS DEL CLIENTE */}
                         <AnimatePresence>
                             {showCustomerModal && (
@@ -1204,8 +1108,8 @@ const PaymentModal = ({
                             )}
                         </AnimatePresence>
 
-                        {/* COLUMNA DERECHA: DESGLOSE DE PAGO */}
-                        <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {/* DESGLOSE DE PAGO */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                                 {/* TOTAL A PAGAR CARD */}
                                 <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1rem', textAlign: 'center' }}>
@@ -1413,13 +1317,36 @@ const PaymentModal = ({
                                 style={{
                                     flex: 1,
                                     height: '4.2rem',
-                                    fontSize: '1.3rem',
+                                    fontSize: '1.2rem',
                                     fontWeight: 900,
                                     borderRadius: '12px',
-                                    letterSpacing: '0.1em'
+                                    letterSpacing: '0.05em'
                                 }}
                             >
                                 ← EDITAR PEDIDO
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowCustomerModal(true)}
+                                className="s-btn"
+                                style={{
+                                    flex: 1.2,
+                                    height: '4.2rem',
+                                    fontSize: '1.2rem',
+                                    fontWeight: 900,
+                                    borderRadius: '12px',
+                                    letterSpacing: '0.05em',
+                                    background: tieneCliente ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                    border: tieneCliente ? '1px solid var(--s-neon)' : '1px solid rgba(255,255,255,0.1)',
+                                    color: tieneCliente ? 'var(--s-neon)' : '#fff',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                <User size={18} />
+                                {tieneCliente ? 'DATOS: REGISTRADO ✓' : 'DATOS DEL CLIENTE'}
                             </button>
                             <button
                                 type="submit"
@@ -1427,7 +1354,7 @@ const PaymentModal = ({
                                 style={{
                                     flex: 1.5,
                                     height: '4.2rem',
-                                    fontSize: '1.3rem',
+                                    fontSize: '1.2rem',
                                     fontWeight: 900,
                                     borderRadius: '12px',
                                     cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
@@ -1435,7 +1362,7 @@ const PaymentModal = ({
                                     background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
                                     color: puedeConfirmar ? '#000' : '#555',
                                     opacity: loading ? 0.7 : 1,
-                                    letterSpacing: '0.1em'
+                                    letterSpacing: '0.05em'
                                 }}
                             >
                                 {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}

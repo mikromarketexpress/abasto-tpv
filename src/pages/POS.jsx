@@ -728,7 +728,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 onClick={e => e.stopPropagation()}
                 style={{
                     width: "90rem",
-                    maxHeight: '95vh',
+                    maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
                     background: '#1a1a1a',
@@ -739,11 +739,11 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                     overflow: 'hidden'
                 }}
             >
-                <div style={{ padding: '2rem 3rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <div style={{ padding: '1.25rem 2.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <h2 style={{ fontSize: '2.4rem', fontWeight: 1000, color: '#fff', margin: 0 }}>DESGLOSE DE PAGO</h2>
-                            <p style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--s-neon)', margin: '0.3rem 0 0 0' }}>MULTIMÉTODO</p>
+                            <h2 style={{ fontSize: '2.2rem', fontWeight: 1000, color: '#fff', margin: 0 }}>DESGLOSE DE PAGO</h2>
+                            <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--s-neon)', margin: '0.2rem 0 0 0' }}>MULTIMÉTODO</p>
                         </div>
                         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0.5rem' }}>
                             <X size={36} />
@@ -752,17 +752,16 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ padding: '2rem 3rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '3rem' }}>
+                    <div style={{ padding: '1.25rem 2.5rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '2.5rem' }}>
                         {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
-                        {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.75rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '3rem' }}>
-                            <h3 style={{ fontSize: '1.8rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <User size={28} style={{ color: 'var(--s-neon)' }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '2.5rem' }}>
+                            <h3 style={{ fontSize: '1.6rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <User size={26} style={{ color: 'var(--s-neon)' }} />
                                 DATOS DEL CLIENTE
                             </h3>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
                                 <select 
                                     value={tipoCliente} 
                                     onChange={e => {
@@ -776,9 +775,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '1rem 1.25rem',
+                                        padding: '0.7rem 1rem',
                                         borderRadius: '10px',
-                                        fontSize: '1.2rem',
+                                        fontSize: '1.1rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none',
@@ -790,8 +789,8 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 </select>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
                                 <input 
                                     type="text"
                                     value={nombreCliente}
@@ -802,9 +801,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '1rem 1.25rem',
+                                        padding: '0.7rem 1rem',
                                         borderRadius: '10px',
-                                        fontSize: '1.2rem',
+                                        fontSize: '1.1rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none'
@@ -813,21 +812,21 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                  />
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
+                                    <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>
                                         {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
                                     </label>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                                         {tipoCliente === 'Persona Natural' ? (
                                             <>
                                                 <button
                                                     type="button"
                                                     onClick={() => setPrefixSeleccionado('V-')}
                                                     style={{
-                                                        padding: '0.35rem 0.75rem',
+                                                        padding: '0.25rem 0.6rem',
                                                         borderRadius: '6px',
-                                                        fontSize: '0.95rem',
+                                                        fontSize: '0.85rem',
                                                         fontWeight: '800',
                                                         border: '1px solid',
                                                         borderColor: prefixSeleccionado === 'V-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
@@ -843,9 +842,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                                     type="button"
                                                     onClick={() => setPrefixSeleccionado('E-')}
                                                     style={{
-                                                        padding: '0.35rem 0.75rem',
+                                                        padding: '0.25rem 0.6rem',
                                                         borderRadius: '6px',
-                                                        fontSize: '0.95rem',
+                                                        fontSize: '0.85rem',
                                                         fontWeight: '800',
                                                         border: '1px solid',
                                                         borderColor: prefixSeleccionado === 'E-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
@@ -864,9 +863,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                                     type="button"
                                                     onClick={() => setPrefixSeleccionado('J-')}
                                                     style={{
-                                                        padding: '0.35rem 0.75rem',
+                                                        padding: '0.25rem 0.6rem',
                                                         borderRadius: '6px',
-                                                        fontSize: '0.95rem',
+                                                        fontSize: '0.85rem',
                                                         fontWeight: '800',
                                                         border: '1px solid',
                                                         borderColor: prefixSeleccionado === 'J-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
@@ -882,9 +881,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                                     type="button"
                                                     onClick={() => setPrefixSeleccionado('G-')}
                                                     style={{
-                                                        padding: '0.35rem 0.75rem',
+                                                        padding: '0.25rem 0.6rem',
                                                         borderRadius: '6px',
-                                                        fontSize: '0.95rem',
+                                                        fontSize: '0.85rem',
                                                         fontWeight: '800',
                                                         border: '1px solid',
                                                         borderColor: prefixSeleccionado === 'G-' ? 'var(--s-neon)' : 'rgba(255,255,255,0.1)',
@@ -900,19 +899,24 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         )}
                                     </div>
                                 </div>
-                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
                                     {prefixSeleccionado && (
-                                        <span style={{ 
-                                            position: 'absolute', 
-                                            left: '1.25rem', 
-                                            color: '#ffffff', 
-                                            fontWeight: '900', 
-                                            fontSize: '1.2rem',
-                                            textShadow: 'none',
-                                            filter: 'none'
+                                        <div style={{
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRight: 'none',
+                                            borderTopLeftRadius: '10px',
+                                            borderBottomLeftRadius: '10px',
+                                            color: '#ffffff',
+                                            fontWeight: '900',
+                                            fontSize: '1.1rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '0 1rem',
+                                            userSelect: 'none'
                                         }}>
                                             {prefixSeleccionado}
-                                        </span>
+                                        </div>
                                     )}
                                     <input 
                                         type="text"
@@ -924,11 +928,13 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                             background: 'rgba(255,255,255,0.03)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             color: '#fff',
-                                            padding: prefixSeleccionado ? '1rem 1.25rem 1rem 3rem' : '1rem 1.25rem',
+                                            padding: '0.7rem 1rem',
                                             borderRadius: '10px',
-                                            fontSize: '1.2rem',
+                                            borderTopLeftRadius: prefixSeleccionado ? '0' : '10px',
+                                            borderBottomLeftRadius: prefixSeleccionado ? '0' : '10px',
+                                            fontSize: '1.1rem',
                                             fontWeight: '800',
-                                            width: '100%',
+                                            flex: 1,
                                             outline: 'none'
                                         }}
                                         required
@@ -936,8 +942,8 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NÚMERO CELULAR</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>NÚMERO CELULAR</label>
                                 <input 
                                     type="tel"
                                     value={celularCliente}
@@ -948,9 +954,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '1rem 1.25rem',
+                                        padding: '0.7rem 1rem',
                                         borderRadius: '10px',
-                                        fontSize: '1.2rem',
+                                        fontSize: '1.1rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none'
@@ -958,8 +964,8 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                <label style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>DIRECCIÓN CORTA</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.05em' }}>DIRECCIÓN CORTA</label>
                                 <input 
                                     type="text"
                                     value={direccionCliente}
@@ -970,9 +976,9 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         color: '#fff',
-                                        padding: '1rem 1.25rem',
+                                        padding: '0.7rem 1rem',
                                         borderRadius: '10px',
-                                        fontSize: '1.2rem',
+                                        fontSize: '1.1rem',
                                         fontWeight: '800',
                                         width: '100%',
                                         outline: 'none'

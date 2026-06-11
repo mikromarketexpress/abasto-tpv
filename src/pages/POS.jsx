@@ -78,6 +78,28 @@ const POS = () => {
     const [showCategoryManager, setShowCategoryManager] = useState(false)
     const [showPaymentModal, setShowPaymentModal] = useState(false)
     
+    const [clienteTipo, setClienteTipo] = useState('Persona Natural')
+    const [clientePrefix, setClientePrefix] = useState('V-')
+    const [clienteNombre, setClienteNombre] = useState('')
+    const [clienteIdentificacion, setClienteIdentificacion] = useState('')
+    const [clienteCelular, setClienteCelular] = useState('')
+    const [clienteDireccion, setClienteDireccion] = useState('')
+
+    const resetClienteData = useCallback(() => {
+        setClienteTipo('Persona Natural')
+        setClientePrefix('V-')
+        setClienteNombre('')
+        setClienteIdentificacion('')
+        setClienteCelular('')
+        setClienteDireccion('')
+    }, [])
+
+    const handleClosePaymentModal = useCallback(() => {
+        setCart([])
+        resetClienteData()
+        setShowPaymentModal(false)
+    }, [resetClienteData])
+    
     const searchRef = useRef(null)
     const { showToast } = useToast()
 
@@ -263,13 +285,14 @@ const POS = () => {
 
             showToast(`VENTA REGISTRADA - TASA: BS ${formatBS(tasaActual)}`)
             setCart([])
+            resetClienteData()
             setShowPaymentModal(false)
         } catch (err) {
             showToast('ERROR AL PROCESAR VENTA', 'error')
         } finally {
             setIsProcessing(false)
         }
-    }, [cart, isProcessing, tasaBCV, total, totalBs, sesionActiva, saveVenta, showToast])
+    }, [cart, isProcessing, tasaBCV, total, totalBs, sesionActiva, saveVenta, showToast, resetClienteData])
 
     const filtered = useMemo(() => {
         const q = String(searchQuery || '').trim().toLowerCase()
@@ -591,8 +614,21 @@ const POS = () => {
                         total={total}
                         totalBs={totalBs}
                         tasaBcv={tasaBCV}
+                        clienteTipo={clienteTipo}
+                        setClienteTipo={setClienteTipo}
+                        clientePrefix={clientePrefix}
+                        setClientePrefix={setClientePrefix}
+                        clienteNombre={clienteNombre}
+                        setClienteNombre={setClienteNombre}
+                        clienteIdentificacion={clienteIdentificacion}
+                        setClienteIdentificacion={setClienteIdentificacion}
+                        clienteCelular={clienteCelular}
+                        setClienteCelular={setClienteCelular}
+                        clienteDireccion={clienteDireccion}
+                        setClienteDireccion={setClienteDireccion}
                         onSubmit={processPayment}
-                        onClose={() => setShowPaymentModal(false)}
+                        onClose={handleClosePaymentModal}
+                        onEditOrder={() => setShowPaymentModal(false)}
                     />
                 )}
             </AnimatePresence>
@@ -618,13 +654,38 @@ const LoadingOverlay = ({ isVisible, message }) => {
     )
 }
 
-const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
-    const [tipoCliente, setTipoCliente] = useState('Persona Natural')
-    const [prefixSeleccionado, setPrefixSeleccionado] = useState('V-')
-    const [nombreCliente, setNombreCliente] = useState('')
-    const [identificacionCliente, setIdentificacionCliente] = useState('')
-    const [celularCliente, setCelularCliente] = useState('')
-    const [direccionCliente, setDireccionCliente] = useState('')
+const PaymentModal = ({
+    total,
+    totalBs,
+    tasaBcv,
+    clienteTipo,
+    setClienteTipo,
+    clientePrefix,
+    setClientePrefix,
+    clienteNombre,
+    setClienteNombre,
+    clienteIdentificacion,
+    setClienteIdentificacion,
+    clienteCelular,
+    setClienteCelular,
+    clienteDireccion,
+    setClienteDireccion,
+    onSubmit,
+    onClose,
+    onEditOrder
+}) => {
+    const tipoCliente = clienteTipo
+    const setTipoCliente = setClienteTipo
+    const prefixSeleccionado = clientePrefix
+    const setPrefixSeleccionado = setClientePrefix
+    const nombreCliente = clienteNombre
+    const setNombreCliente = setClienteNombre
+    const identificacionCliente = clienteIdentificacion
+    const setIdentificacionCliente = setClienteIdentificacion
+    const celularCliente = clienteCelular
+    const setCellularCliente = setClienteCelular
+    const direccionCliente = clienteDireccion
+    const setDireccionCliente = setClienteDireccion
 
     const [pagos, setPagos] = useState(() => {
         const init = {}
@@ -1162,25 +1223,42 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 </motion.div>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={!puedeConfirmar || loading}
-                                style={{
-                                    height: '5.5rem',
-                                    fontSize: '1.5rem',
-                                    fontWeight: 900,
-                                    borderRadius: '12px',
-                                    cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
-                                    border: 'none',
-                                    background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
-                                    color: puedeConfirmar ? '#000' : '#555',
-                                    opacity: loading ? 0.7 : 1,
-                                    letterSpacing: '0.1em',
-                                    marginTop: '1rem'
-                                }}
-                            >
-                                {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}
-                            </button>
+                            <div style={{ display: 'flex', gap: '1.25rem', marginTop: '1rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={onEditOrder}
+                                    className="s-btn s-btn-secondary"
+                                    style={{
+                                        flex: 1,
+                                        height: '4.5rem',
+                                        fontSize: '1.3rem',
+                                        fontWeight: 900,
+                                        borderRadius: '12px',
+                                        letterSpacing: '0.1em'
+                                    }}
+                                >
+                                    ← EDITAR PEDIDO
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!puedeConfirmar || loading}
+                                    style={{
+                                        flex: 1.5,
+                                        height: '4.5rem',
+                                        fontSize: '1.3rem',
+                                        fontWeight: 900,
+                                        borderRadius: '12px',
+                                        cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
+                                        border: 'none',
+                                        background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
+                                        color: puedeConfirmar ? '#000' : '#555',
+                                        opacity: loading ? 0.7 : 1,
+                                        letterSpacing: '0.1em'
+                                    }}
+                                >
+                                    {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User } from 'lucide-react'
+import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User, Copy } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../context/ToastContext'
 import { useDatabase } from '../hooks/useDatabase'
@@ -700,6 +700,13 @@ const PaymentModal = ({
         transferencia: ''
     })
     const [loading, setLoading] = useState(false)
+    const { showToast } = useToast()
+
+    const handleCopy = (amount) => {
+        const textToCopy = formatBS(amount);
+        navigator.clipboard.writeText(textToCopy);
+        showToast(`COPIADO: Bs ${textToCopy}`, 'success');
+    }
 
     const totalPagadoUSD = useMemo(() => {
         const tasaValida = tasaBcv > 0 ? tasaBcv : 1
@@ -1251,7 +1258,21 @@ const PaymentModal = ({
                                 <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1rem', textAlign: 'center' }}>
                                     <div style={{ fontSize: '1rem', fontWeight: 800, color: '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>TOTAL A PAGAR</div>
                                     <div style={{ fontSize: '3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
-                                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                        {tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}
+                                        {tasaBcv > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopy(totalBs)}
+                                                style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--s-neon)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                                title="Copiar monto en Bs"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* ESTA FALTANDO CARD */}
@@ -1269,8 +1290,20 @@ const PaymentModal = ({
                                     <div style={{ fontSize: '3rem', fontWeight: 1000, color: falta > 0.005 ? '#ff3131' : 'var(--s-neon)', lineHeight: 1.1 }}>
                                         ${formatUSD(falta)}
                                     </div>
-                                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                         {tasaBcv > 0 ? `BS ${formatBS(falta * tasaBcv)}` : 'BS 0,00'}
+                                        {tasaBcv > 0 && falta > 0.005 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopy(falta * tasaBcv)}
+                                                style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.color = '#ff3131'}
+                                                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                                title="Copiar monto en Bs"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

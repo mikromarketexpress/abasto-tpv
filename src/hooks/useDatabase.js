@@ -10,20 +10,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { gsService } from '../lib/googleSheetsService';
 
 export function useDatabase() {
-  const [productos, setProductos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [productos, setProductos] = useState(() => gsService.getTable('Productos') || []);
+  const [categorias, setCategorias] = useState(() => gsService.getTable('Categorias') || []);
+  const [loading, setLoading] = useState(() => {
+    const cachedProds = gsService.getTable('Productos') || [];
+    return cachedProds.length === 0;
+  });
   const [error, setError] = useState(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [syncingStatus, setSyncingStatus] = useState({});
 
   // ==========================================================================
-  // INICIALIZACIÓN - Async/Await
+  // INICIALIZACIÓN - Async/Await (Segundo Plano si hay Cache)
   // ==========================================================================
 
   useEffect(function() {
     var init = async function() {
-      setLoading(true);
+      const cachedProds = gsService.getTable('Productos') || [];
+      if (cachedProds.length === 0) {
+        setLoading(true);
+      }
       try {
         await gsService.initialize();
         setProductos(gsService.getTable('Productos') || []);
@@ -53,6 +59,25 @@ export function useDatabase() {
       }
     };
   }, []);
+
+  // Polling automático en segundo plano cada 15 segundos para tener "tiempo real"
+  useEffect(function() {
+    if (!isOnline) return;
+
+    var timer = setInterval(async function() {
+      try {
+        await gsService.refresh();
+        setProductos(gsService.getTable('Productos') || []);
+        setCategorias(gsService.getTable('Categorias') || []);
+      } catch(err) {
+        console.warn('[useDatabase] Background sync error:', err.message);
+      }
+    }, 15000);
+
+    return function() {
+      clearInterval(timer);
+    };
+  }, [isOnline]);
 
   // ==========================================================================
   // PRODUCTOS - CRUD (OPTIMISTA - NO BLOQUEA UI)

@@ -17,10 +17,10 @@ import { abrirTicketImpresion } from '../lib/ticketPrinter'
 const METODOS_PAGO = [
     { id: 'efectivo_usd', nombre: 'EFECTIVO (USD)', icon: DollarSign, color: '#00e676', prefix: '$', type: 'usd' },
     { id: 'efectivo_bs', nombre: 'EFECTIVO (BS)', icon: Wallet, color: '#2196f3', prefix: 'Bs', type: 'bs' },
-    { id: 'debito', nombre: 'DÉBITO (PUNTO DE VENTA)', icon: CreditCard, color: '#9c27b0', prefix: 'Bs', type: 'bs' },
-    { id: 'pago_movil', nombre: 'PAGO MÓVIL', icon: Smartphone, color: '#ff9800', prefix: 'Bs', type: 'bs' },
-    { id: 'bio_pago', nombre: 'BIO PAGO', icon: QrCode, color: '#e91e63', prefix: 'Bs', type: 'bs' },
-    { id: 'transferencia', nombre: 'TRANSFERENCIA', icon: ArrowLeftRight, color: '#00bcd4', prefix: 'Bs', type: 'bs' }
+    { id: 'debito', nombre: 'DÉBITO (PUNTO DE VENTA)', icon: CreditCard, color: '#ffffff', prefix: 'Bs', type: 'bs' },
+    { id: 'pago_movil', nombre: 'PAGO MÓVIL', icon: Smartphone, color: '#ffffff', prefix: 'Bs', type: 'bs' },
+    { id: 'bio_pago', nombre: 'BIO PAGO', icon: QrCode, color: '#ffffff', prefix: 'Bs', type: 'bs' },
+    { id: 'transferencia', nombre: 'TRANSFERENCIA', icon: ArrowLeftRight, color: '#ffffff', prefix: 'Bs', type: 'bs' }
 ]
 
 const pluralizarMedida = (medida, cantidad) => {
@@ -902,7 +902,15 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                                 </div>
                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                     {prefixSeleccionado && (
-                                        <span style={{ position: 'absolute', left: '1.25rem', color: 'var(--s-neon)', fontWeight: '900', fontSize: '1.2rem' }}>
+                                        <span style={{ 
+                                            position: 'absolute', 
+                                            left: '1.25rem', 
+                                            color: '#ffffff', 
+                                            fontWeight: '900', 
+                                            fontSize: '1.2rem',
+                                            textShadow: 'none',
+                                            filter: 'none'
+                                        }}>
                                             {prefixSeleccionado}
                                         </span>
                                     )}

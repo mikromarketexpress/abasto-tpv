@@ -743,6 +743,31 @@ const PaymentModal = ({
         }
     }
 
+    const handlePasteVuelto = async (key) => {
+        const isBs = key !== 'usd';
+        try {
+            let clipboardText = '';
+            try {
+                clipboardText = await navigator.clipboard.readText();
+            } catch (err) {
+                clipboardText = isBs ? copiedBS : copiedUSD;
+            }
+
+            if (!clipboardText) {
+                clipboardText = isBs ? copiedBS : copiedUSD;
+            }
+
+            if (clipboardText) {
+                handleVueltoChange(key, clipboardText);
+                showToast(`PEGADO VUELTO: ${clipboardText}`, 'success');
+            } else {
+                showToast('NADA QUE PEGAR. COPIA UN MONTO PRIMERO.', 'warning');
+            }
+        } catch (err) {
+            showToast('ERROR AL PEGAR', 'error');
+        }
+    }
+
     const totalPagadoUSD = useMemo(() => {
         const tasaValida = tasaBcv > 0 ? tasaBcv : 1
         return METODOS_PAGO.reduce((sum, m) => {
@@ -778,6 +803,19 @@ const PaymentModal = ({
 
     const handleChange = (id, value) => setPagos(prev => ({ ...prev, [id]: String(value) }))
     const handleVueltoChange = (key, value) => setVueltoAsignado(prev => ({ ...prev, [key]: String(value) }))
+
+    const addZeroes = (key, count) => {
+        const val = vueltoAsignado[key] || '0';
+        const cents = Math.round((parseFloat(String(val).replace(',', '.')) || 0) * 100);
+        const factor = count === 2 ? 100 : 1000;
+        const newCents = cents * factor;
+        if (newCents > 999999999999) return;
+        handleVueltoChange(key, newCents / 100);
+    }
+
+    const handleClearVuelto = (key) => {
+        handleVueltoChange(key, '');
+    }
 
     const handleNoData = () => {
         setTipoCliente('Persona Natural')
@@ -1176,8 +1214,31 @@ const PaymentModal = ({
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.75rem' }}>
                                     <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
-                                    <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff' }}>
-                                        TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
+                                    <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleCopyUSD(vueltoTeoricoUSD)}
+                                            style={{ background: 'none', border: 'none', padding: '0.1rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--s-neon)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                            title="Copiar vuelto teórico en USD"
+                                        >
+                                            <Copy size={14} />
+                                        </button>
+                                        {tasaBcv > 0 ? ` (BS ${formatBS(vueltoTeoricoBS)})` : ''}
+                                        {tasaBcv > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopyBS(vueltoTeoricoBS)}
+                                                style={{ background: 'none', border: 'none', padding: '0.1rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--s-neon)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                                title="Copiar vuelto teórico en Bs"
+                                            >
+                                                <Copy size={14} />
+                                            </button>
+                                        )}
                                     </span>
                                 </div>
 
@@ -1199,6 +1260,7 @@ const PaymentModal = ({
                                         const isExcedido = diff < 0;
                                         const absDiffUSD = Math.abs(diff);
                                         const absDiffBS = absDiffUSD * tasaBcv;
+                                        const cardColor = isExcedido ? '#ff9100' : '#ff3131';
                                         
                                         return (
                                             <div style={{ 
@@ -1211,11 +1273,33 @@ const PaymentModal = ({
                                                 <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ccc', letterSpacing: '0.15em', marginBottom: '0.35rem' }}>
                                                     {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
                                                 </div>
-                                                <div style={{ fontSize: '3rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
+                                                <div style={{ fontSize: '3rem', fontWeight: 1000, color: cardColor, lineHeight: 1.1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                                     {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCopyUSD(absDiffUSD)}
+                                                        style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.color = cardColor}
+                                                        onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                                        title="Copiar diferencia en USD"
+                                                    >
+                                                        <Copy size={16} />
+                                                    </button>
                                                 </div>
-                                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginTop: '0.35rem' }}>
+                                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginTop: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                                     {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
+                                                    {tasaBcv > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleCopyBS(absDiffBS)}
+                                                            style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.color = cardColor}
+                                                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                                            title="Copiar diferencia en Bs"
+                                                        >
+                                                            <Copy size={14} />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -1225,61 +1309,449 @@ const PaymentModal = ({
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                                     <div>
                                         <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (USD)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900, fontSize: '1.4rem' }}>$</div>
-                                            <CurrencyInput
-                                                currency="USD"
-                                                value={vueltoAsignado.usd}
-                                                onChange={v => handleVueltoChange('usd', v)}
-                                                placeholder="0.00"
-                                                color="#00e676"
-                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                            />
+                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                            <div style={{ position: 'relative', flex: 1 }}>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>$</div>
+                                                <CurrencyInput
+                                                    currency="USD"
+                                                    value={vueltoAsignado.usd}
+                                                    onChange={v => handleVueltoChange('usd', v)}
+                                                    placeholder="0.00"
+                                                    color="#00e676"
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleClearVuelto('usd')}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ff5252',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,82,82,0.1)'; e.currentTarget.style.borderColor = '#ff5252'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Limpiar monto"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('usd', 2)}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#00e676',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#00e676'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 00"
+                                            >
+                                                00
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('usd', 3)}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#00e676',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#00e676'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 000"
+                                            >
+                                                000
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePasteVuelto('usd')}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#00e676',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#00e676'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Pegar monto de vuelto"
+                                            >
+                                                <Clipboard size={16} />
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div>
                                         <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.5rem' }}>VUELTO EN EFECTIVO (BS)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
-                                            <BsInput
-                                                value={vueltoAsignado.bs}
-                                                onChange={v => handleVueltoChange('bs', v)}
-                                                placeholder="0,00"
-                                                color="#2196f3"
+                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                            <div style={{ position: 'relative', flex: 1 }}>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>Bs</div>
+                                                <BsInput
+                                                    value={vueltoAsignado.bs}
+                                                    onChange={v => handleVueltoChange('bs', v)}
+                                                    placeholder="0,00"
+                                                    color="#2196f3"
+                                                    disabled={tasaBcv === 0}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleClearVuelto('bs')}
                                                 disabled={tasaBcv === 0}
-                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                            />
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ff5252',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,82,82,0.1)'; e.currentTarget.style.borderColor = '#ff5252'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Limpiar monto"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('bs', 2)}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#2196f3',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#2196f3'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 00"
+                                            >
+                                                00
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('bs', 3)}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#2196f3',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#2196f3'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 000"
+                                            >
+                                                000
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePasteVuelto('bs')}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#2196f3',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#2196f3'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Pegar monto de vuelto"
+                                            >
+                                                <Clipboard size={16} />
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.5rem' }}>VUELTO PAGO MÓVIL (BS)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
-                                            <BsInput
-                                                value={vueltoAsignado.pago_movil}
-                                                onChange={v => handleVueltoChange('pago_movil', v)}
-                                                placeholder="0,00"
-                                                color="#ff9800"
+                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.5rem' }}>VUELTO PAGO MÓVIL (BS)</label>
+                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                            <div style={{ position: 'relative', flex: 1 }}>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ffffff', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>Bs</div>
+                                                <BsInput
+                                                    value={vueltoAsignado.pago_movil}
+                                                    onChange={v => handleVueltoChange('pago_movil', v)}
+                                                    placeholder="0,00"
+                                                    color="#ffffff"
+                                                    disabled={tasaBcv === 0}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleClearVuelto('pago_movil')}
                                                 disabled={tasaBcv === 0}
-                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                            />
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ff5252',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,82,82,0.1)'; e.currentTarget.style.borderColor = '#ff5252'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Limpiar monto"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('pago_movil', 2)}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ffffff',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 00"
+                                            >
+                                                00
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('pago_movil', 3)}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ffffff',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 000"
+                                            >
+                                                000
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePasteVuelto('pago_movil')}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ffffff',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Pegar monto de vuelto"
+                                            >
+                                                <Clipboard size={16} />
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.5rem' }}>VUELTO TRANSFERENCIA (BS)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900, fontSize: '1.4rem' }}>Bs</div>
-                                            <BsInput
-                                                value={vueltoAsignado.transferencia}
-                                                onChange={v => handleVueltoChange('transferencia', v)}
-                                                placeholder="0,00"
-                                                color="#00bcd4"
+                                        <label style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.5rem' }}>VUELTO TRANSFERENCIA (BS)</label>
+                                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                                            <div style={{ position: 'relative', flex: 1 }}>
+                                                <div style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#ffffff', fontWeight: 900, fontSize: '1.4rem', zIndex: 1 }}>Bs</div>
+                                                <BsInput
+                                                    value={vueltoAsignado.transferencia}
+                                                    onChange={v => handleVueltoChange('transferencia', v)}
+                                                    placeholder="0,00"
+                                                    color="#ffffff"
+                                                    disabled={tasaBcv === 0}
+                                                    style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleClearVuelto('transferencia')}
                                                 disabled={tasaBcv === 0}
-                                                style={{ fontSize: '1.2rem', padding: '1rem 1.25rem 1rem 3rem' }}
-                                            />
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ff5252',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,82,82,0.1)'; e.currentTarget.style.borderColor = '#ff5252'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Limpiar monto"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('transferencia', 2)}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.5rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ffffff',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 00"
+                                            >
+                                                00
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => addZeroes('transferencia', 3)}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ffffff',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.85rem',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Agregar 000"
+                                            >
+                                                000
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePasteVuelto('transferencia')}
+                                                disabled={tasaBcv === 0}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '8px',
+                                                    width: '2.8rem',
+                                                    height: '3.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#ffffff',
+                                                    cursor: tasaBcv === 0 ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => { if (tasaBcv > 0) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = '#ffffff'; } }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                title="Pegar monto de vuelto"
+                                            >
+                                                <Clipboard size={16} />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User, Copy } from 'lucide-react'
+import { Search, Plus, Minus, Smartphone, Package, ShoppingBag, Trash2, X, AlertTriangle, Database, CreditCard, Wallet, QrCode, ArrowLeftRight, DollarSign, User, Copy, Clipboard } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '../context/ToastContext'
 import { useDatabase } from '../hooks/useDatabase'
@@ -702,10 +702,45 @@ const PaymentModal = ({
     const [loading, setLoading] = useState(false)
     const { showToast } = useToast()
 
-    const handleCopy = (amount) => {
+    const [copiedUSD, setCopiedUSD] = useState('')
+    const [copiedBS, setCopiedBS] = useState('')
+
+    const handleCopyUSD = (amount) => {
+        const textToCopy = formatUSD(amount);
+        navigator.clipboard.writeText(textToCopy);
+        setCopiedUSD(textToCopy);
+        showToast(`COPIADO: $ ${textToCopy}`, 'success');
+    }
+
+    const handleCopyBS = (amount) => {
         const textToCopy = formatBS(amount);
         navigator.clipboard.writeText(textToCopy);
+        setCopiedBS(textToCopy);
         showToast(`COPIADO: Bs ${textToCopy}`, 'success');
+    }
+
+    const handlePaste = async (id, type) => {
+        try {
+            let clipboardText = '';
+            try {
+                clipboardText = await navigator.clipboard.readText();
+            } catch (err) {
+                clipboardText = type === 'usd' ? copiedUSD : copiedBS;
+            }
+
+            if (!clipboardText) {
+                clipboardText = type === 'usd' ? copiedUSD : copiedBS;
+            }
+
+            if (clipboardText) {
+                handleChange(id, clipboardText);
+                showToast(`PEGADO: ${clipboardText}`, 'success');
+            } else {
+                showToast('NADA QUE PEGAR. COPIA UN MONTO PRIMERO.', 'warning');
+            }
+        } catch (err) {
+            showToast('ERROR AL PEGAR', 'error');
+        }
     }
 
     const totalPagadoUSD = useMemo(() => {
@@ -1257,13 +1292,25 @@ const PaymentModal = ({
                                 {/* TOTAL A PAGAR CARD */}
                                 <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '14px', padding: '1rem', textAlign: 'center' }}>
                                     <div style={{ fontSize: '1rem', fontWeight: 800, color: '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>TOTAL A PAGAR</div>
-                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
+                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                        ${formatUSD(total)}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleCopyUSD(total)}
+                                            style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--s-neon)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                            title="Copiar monto en USD"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
                                     <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                         {tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}
                                         {tasaBcv > 0 && (
                                             <button
                                                 type="button"
-                                                onClick={() => handleCopy(totalBs)}
+                                                onClick={() => handleCopyBS(totalBs)}
                                                 style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
                                                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--s-neon)'}
                                                 onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
@@ -1287,15 +1334,27 @@ const PaymentModal = ({
                                     <div style={{ fontSize: '1rem', fontWeight: 800, color: falta > 0.005 ? '#ff4f4f' : '#888', letterSpacing: '0.15em', marginBottom: '0.4rem' }}>
                                         {falta > 0.005 ? 'ESTÁ FALTANDO' : 'PAGO COMPLETO'}
                                     </div>
-                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: falta > 0.005 ? '#ff3131' : 'var(--s-neon)', lineHeight: 1.1 }}>
+                                    <div style={{ fontSize: '3rem', fontWeight: 1000, color: falta > 0.005 ? '#ff3131' : 'var(--s-neon)', lineHeight: 1.1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                         ${formatUSD(falta)}
+                                        {falta > 0.005 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopyUSD(falta)}
+                                                style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.color = '#ff3131'}
+                                                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                                                title="Copiar monto en USD"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                     <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                         {tasaBcv > 0 ? `BS ${formatBS(falta * tasaBcv)}` : 'BS 0,00'}
                                         {tasaBcv > 0 && falta > 0.005 && (
                                             <button
                                                 type="button"
-                                                onClick={() => handleCopy(falta * tasaBcv)}
+                                                onClick={() => handleCopyBS(falta * tasaBcv)}
                                                 style={{ background: 'none', border: 'none', padding: '0.2rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
                                                 onMouseEnter={(e) => e.currentTarget.style.color = '#ff3131'}
                                                 onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
@@ -1341,6 +1400,29 @@ const PaymentModal = ({
                                                         />
                                                     )}
                                                 </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handlePaste(id, pType)}
+                                                    disabled={isBsDisabled}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        borderRadius: '10px',
+                                                        width: '3.5rem',
+                                                        height: '3.5rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color,
+                                                        cursor: isBsDisabled ? 'not-allowed' : 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => { if (!isBsDisabled) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = color; } }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                    title="Pegar monto"
+                                                >
+                                                    <Clipboard size={18} />
+                                                </button>
                                             </div>
                                         </div>
                                     )

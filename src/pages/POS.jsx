@@ -179,7 +179,7 @@ const POS = () => {
         if (!cart.length || isProcessing) return
         setIsProcessing(true)
         try {
-            const { pagos, vuelto_entregado_usd, vuelto_entregado_bs, vuelto_efectivo_bs, vuelto_pago_movil, vuelto_transferencia } = payload
+            const { pagos, vuelto_entregado_usd, vuelto_entregado_bs, vuelto_efectivo_bs, vuelto_pago_movil, vuelto_transferencia, cliente_tipo, cliente_nombre, cliente_identificacion } = payload
             const tasaActual = parseFloat(tasaBCV) || 46.5
             const totalCosto = cart.reduce((s, i) => s + (parseFloat(i.precio_costo) || 0) * i.cantidad, 0)
             const saleId = crypto.randomUUID()
@@ -211,7 +211,10 @@ const POS = () => {
                 total_costo_usd: totalCosto,
                 tasa_bcv: tasaActual,
                 sesion_caja_id: sesionActiva?.id || null,
-                fecha: saleFecha
+                fecha: saleFecha,
+                cliente_tipo: cliente_tipo || 'Persona Natural',
+                cliente_nombre: String(cliente_nombre || '').toUpperCase(),
+                cliente_identificacion: String(cliente_identificacion || '').toUpperCase()
             }).then(result => {
                 if (result && !result.success) {
                     showToast(`⚠️ NO SINCRONIZÓ EN GOOGLE SHEETS: ${result.error || 'FALLO'}`, 'warning')
@@ -236,6 +239,9 @@ const POS = () => {
                 totalUSD: total,
                 totalBS: totalBs,
                 tasaBCV: tasaActual,
+                clienteTipo: cliente_tipo || 'Persona Natural',
+                clienteNombre: String(cliente_nombre || '').toUpperCase(),
+                clienteIdentificacion: String(cliente_identificacion || '').toUpperCase()
             })
 
             // Decrementar optimistamente el stock local
@@ -609,6 +615,10 @@ const LoadingOverlay = ({ isVisible, message }) => {
 }
 
 const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
+    const [tipoCliente, setTipoCliente] = useState('Persona Natural')
+    const [nombreCliente, setNombreCliente] = useState('')
+    const [identificacionCliente, setIdentificacionCliente] = useState('')
+
     const [pagos, setPagos] = useState(() => {
         const init = {}
         METODOS_PAGO.forEach(m => init[m.id] = '')
@@ -668,7 +678,10 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 vuelto_entregado_bs: parseFloat(String(vueltoAsignado.bs || '0').replace(',', '.')) || 0,
                 vuelto_efectivo_bs: parseFloat(String(vueltoAsignado.bs || '0').replace(',', '.')) || 0,
                 vuelto_pago_movil: parseFloat(String(vueltoAsignado.pago_movil || '0').replace(',', '.')) || 0,
-                vuelto_transferencia: parseFloat(String(vueltoAsignado.transferencia || '0').replace(',', '.')) || 0
+                vuelto_transferencia: parseFloat(String(vueltoAsignado.transferencia || '0').replace(',', '.')) || 0,
+                cliente_tipo: tipoCliente,
+                cliente_nombre: nombreCliente,
+                cliente_identificacion: identificacionCliente
             })
         } catch (err) {
             console.error(err)
@@ -703,7 +716,7 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                 transition={{ duration: 0.2 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                    width: "38rem",
+                    width: "55rem",
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
@@ -727,192 +740,279 @@ const PaymentModal = ({ total, totalBs, tasaBcv, onSubmit, onClose }) => {
                     </div>
                 </div>
 
-                <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1 }}>
-                    <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '10px', padding: '1rem', marginBottom: '1.25rem', textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#666', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>TOTAL A PAGAR</div>
-                        <div style={{ fontSize: '2.2rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
-                    </div>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', flex: 1, display: 'flex', gap: '1.5rem' }}>
+                        {/* COLUMNA IZQUIERDA: DATOS DEL CLIENTE */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', borderRight: '1px solid rgba(255,255,255,0.06)', paddingRight: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.05rem', fontWeight: 1000, color: 'var(--s-neon)', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', margin: 0 }}>
+                                DATOS DEL CLIENTE
+                            </h3>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#aaa', letterSpacing: '0.05em' }}>TIPO DE CLIENTE</label>
+                                <select 
+                                    value={tipoCliente} 
+                                    onChange={e => {
+                                        setTipoCliente(e.target.value);
+                                        setIdentificacionCliente('');
+                                    }}
+                                    className="s-input"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        color: '#fff',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '800',
+                                        width: '100%',
+                                        outline: 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="Persona Natural" style={{ background: '#1a1a1a' }}>Persona Natural</option>
+                                    <option value="Persona Juridica" style={{ background: '#1a1a1a' }}>Persona Jurídica</option>
+                                    <option value="Otros" style={{ background: '#1a1a1a' }}>Otros</option>
+                                </select>
+                            </div>
 
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
-                            {METODOS_PAGO.map(({ id, nombre, icon: Icon, color, prefix, type: pType }) => {
-                                const isBsDisabled = tasaBcv === 0 && pType === 'bs'
-                                return (
-                                    <div key={id}>
-                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color, letterSpacing: '0.1em', display: 'block', marginBottom: '0.3rem' }}>{nombre}</label>
-                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                            <div style={{ position: 'relative', flex: 1 }}>
-                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color, fontWeight: 900, fontSize: '1.1rem', zIndex: 1 }}>{prefix}</div>
-                                                {pType === 'bs' ? (
-                                                    <BsInput
-                                                        value={pagos[id]}
-                                                        onChange={v => handleChange(id, v)}
-                                                        disabled={isBsDisabled}
-                                                        placeholder="0,00"
-                                                        color={color}
-                                                    />
-                                                ) : (
-                                                    <CurrencyInput
-                                                        currency="USD"
-                                                        value={pagos[id]}
-                                                        onChange={v => handleChange(id, v)}
-                                                        placeholder="0.00"
-                                                        disabled={isBsDisabled}
-                                                        color={color}
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#aaa', letterSpacing: '0.05em' }}>NOMBRE DEL CLIENTE</label>
+                                <input 
+                                    type="text"
+                                    value={nombreCliente}
+                                    onChange={e => setNombreCliente(e.target.value)}
+                                    placeholder="Ingrese Nombre o Razón Social"
+                                    className="s-input"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        color: '#fff',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '800',
+                                        width: '100%',
+                                        outline: 'none'
+                                    }}
+                                    required
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#aaa', letterSpacing: '0.05em' }}>
+                                    {tipoCliente === 'Persona Natural' ? 'CÉDULA DE IDENTIDAD' : 'RIF'}
+                                </label>
+                                <input 
+                                    type="text"
+                                    value={identificacionCliente}
+                                    onChange={e => setIdentificacionCliente(e.target.value)}
+                                    placeholder={tipoCliente === 'Persona Natural' ? 'V-12345678' : 'J-12345678-9'}
+                                    className="s-input"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        color: '#fff',
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '800',
+                                        width: '100%',
+                                        outline: 'none'
+                                    }}
+                                    required
+                                />
+                            </div>
                         </div>
 
-                        {/* SECCIÓN DE VUELTO: Se activa únicamente si la suma de pagos supera el total */}
-                        {tieneVuelto && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                style={{
-                                    border: '1px dashed var(--s-neon)',
-                                    background: 'rgba(0,230,118,0.02)',
-                                    borderRadius: '10px',
-                                    padding: '1rem',
-                                    marginTop: '0.5rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.75rem'
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.5rem' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
-                                        TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
-                                    </span>
-                                </div>
+                        {/* COLUMNA DERECHA: DESGLOSE DE PAGO */}
+                        <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ background: 'rgba(0,230,118,0.05)', border: '1px solid rgba(0,230,118,0.15)', borderRadius: '10px', padding: '0.75rem', textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#666', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>TOTAL A PAGAR</div>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>${formatUSD(total)}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>{tasaBcv > 0 ? `BS ${formatBS(totalBs)}` : 'BS 0,00'}</div>
+                            </div>
 
-                                {vueltoCuadrado ? (
-                                    <div style={{ 
-                                        background: 'rgba(0,230,118,0.05)', 
-                                        border: '1px solid rgba(0,230,118,0.15)', 
-                                        borderRadius: '10px', 
-                                        padding: '1rem', 
-                                        textAlign: 'center' 
-                                    }}>
-                                        <div style={{ fontSize: '1rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
-                                            ✓ MONTO DE VUELTO CUADRADO EXACTAMENTE
-                                        </div>
-                                    </div>
-                                ) : (
-                                    (() => {
-                                        const diff = vueltoTeoricoUSD - totalVueltoUSD;
-                                        const isExcedido = diff < 0;
-                                        const absDiffUSD = Math.abs(diff);
-                                        const absDiffBS = absDiffUSD * tasaBcv;
-                                        
-                                        return (
-                                            <div style={{ 
-                                                background: isExcedido ? 'rgba(255,145,0,0.05)' : 'rgba(255,49,49,0.05)', 
-                                                border: `1px solid ${isExcedido ? 'rgba(255,145,0,0.15)' : 'rgba(255,49,49,0.15)'}`, 
-                                                borderRadius: '10px', 
-                                                padding: '1rem', 
-                                                textAlign: 'center' 
-                                            }}>
-                                                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#999', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
-                                                    {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
-                                                </div>
-                                                <div style={{ fontSize: '2.2rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
-                                                    {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
-                                                </div>
-                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>
-                                                    {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
+                                {METODOS_PAGO.map(({ id, nombre, icon: Icon, color, prefix, type: pType }) => {
+                                    const isBsDisabled = tasaBcv === 0 && pType === 'bs'
+                                    return (
+                                        <div key={id}>
+                                            <label style={{ fontSize: '0.55rem', fontWeight: 800, color, letterSpacing: '0.1em', display: 'block', marginBottom: '0.3rem' }}>{nombre}</label>
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                <div style={{ position: 'relative', flex: 1 }}>
+                                                    <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color, fontWeight: 900, fontSize: '1.1rem', zIndex: 1 }}>{prefix}</div>
+                                                    {pType === 'bs' ? (
+                                                        <BsInput
+                                                            value={pagos[id]}
+                                                            onChange={v => handleChange(id, v)}
+                                                            disabled={isBsDisabled}
+                                                            placeholder="0,00"
+                                                            color={color}
+                                                        />
+                                                    ) : (
+                                                        <CurrencyInput
+                                                            currency="USD"
+                                                            value={pagos[id]}
+                                                            onChange={v => handleChange(id, v)}
+                                                            placeholder="0.00"
+                                                            disabled={isBsDisabled}
+                                                            color={color}
+                                                        />
+                                                    )}
                                                 </div>
                                             </div>
-                                        );
-                                    })()
-                                )}
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.3rem' }}>VUELTO EN EFECTIVO (USD)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900 }}>$</div>
-                                            <CurrencyInput
-                                                currency="USD"
-                                                value={vueltoAsignado.usd}
-                                                onChange={v => handleVueltoChange('usd', v)}
-                                                placeholder="0.00"
-                                                color="#00e676"
-                                            />
                                         </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* SECCIÓN DE VUELTO: Se activa únicamente si la suma de pagos supera el total */}
+                            {tieneVuelto && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    style={{
+                                        border: '1px dashed var(--s-neon)',
+                                        background: 'rgba(0,230,118,0.02)',
+                                        borderRadius: '10px',
+                                        padding: '1rem',
+                                        marginTop: '0.5rem',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '0.75rem'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '0.5rem' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--s-neon)' }}>DESGLOSE DE VUELTO</span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
+                                            TEÓRICO: ${vueltoTeoricoUSD.toFixed(2)} {tasaBcv > 0 ? `(BS ${formatBS(vueltoTeoricoBS)})` : ''}
+                                        </span>
                                     </div>
 
-                                    <div>
-                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.3rem' }}>VUELTO EN EFECTIVO (BS)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900 }}>Bs</div>
-                                            <BsInput
-                                                value={vueltoAsignado.bs}
-                                                onChange={v => handleVueltoChange('bs', v)}
-                                                placeholder="0,00"
-                                                color="#2196f3"
-                                                disabled={tasaBcv === 0}
-                                            />
+                                    {vueltoCuadrado ? (
+                                        <div style={{ 
+                                            background: 'rgba(0,230,118,0.05)', 
+                                            border: '1px solid rgba(0,230,118,0.15)', 
+                                            borderRadius: '10px', 
+                                            padding: '1rem', 
+                                            textAlign: 'center' 
+                                        }}>
+                                            <div style={{ fontSize: '1rem', fontWeight: 1000, color: 'var(--s-neon)', lineHeight: 1.1 }}>
+                                                ✓ MONTO DE VUELTO CUADRADO EXACTAMENTE
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        (() => {
+                                            const diff = vueltoTeoricoUSD - totalVueltoUSD;
+                                            const isExcedido = diff < 0;
+                                            const absDiffUSD = Math.abs(diff);
+                                            const absDiffBS = absDiffUSD * tasaBcv;
+                                            
+                                            return (
+                                                <div style={{ 
+                                                    background: isExcedido ? 'rgba(255,145,0,0.05)' : 'rgba(255,49,49,0.05)', 
+                                                    border: `1px solid ${isExcedido ? 'rgba(255,145,0,0.15)' : 'rgba(255,49,49,0.15)'}`, 
+                                                    borderRadius: '10px', 
+                                                    padding: '1rem', 
+                                                    textAlign: 'center' 
+                                                }}>
+                                                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#999', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
+                                                        {isExcedido ? 'EXCESO A ENTREGAR (REDUCIR MONTOS)' : 'DIFERENCIA POR ASIGNAR'}
+                                                    </div>
+                                                    <div style={{ fontSize: '2.2rem', fontWeight: 1000, color: isExcedido ? '#ff9100' : '#ff3131', lineHeight: 1.1 }}>
+                                                        {isExcedido ? '-' : ''}${absDiffUSD.toFixed(2)}
+                                                    </div>
+                                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', marginTop: '0.25rem' }}>
+                                                        {tasaBcv > 0 ? `${isExcedido ? '-' : ''}BS ${formatBS(absDiffBS)}` : 'BS 0,00'}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()
+                                    )}
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#00e676', display: 'block', marginBottom: '0.3rem' }}>VUELTO EN EFECTIVO (USD)</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00e676', fontWeight: 900 }}>$</div>
+                                                <CurrencyInput
+                                                    currency="USD"
+                                                    value={vueltoAsignado.usd}
+                                                    onChange={v => handleVueltoChange('usd', v)}
+                                                    placeholder="0.00"
+                                                    color="#00e676"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#2196f3', display: 'block', marginBottom: '0.3rem' }}>VUELTO EN EFECTIVO (BS)</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#2196f3', fontWeight: 900 }}>Bs</div>
+                                                <BsInput
+                                                    value={vueltoAsignado.bs}
+                                                    onChange={v => handleVueltoChange('bs', v)}
+                                                    placeholder="0,00"
+                                                    color="#2196f3"
+                                                    disabled={tasaBcv === 0}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.3rem' }}>VUELTO PAGO MÓVIL (BS)</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900 }}>Bs</div>
+                                                <BsInput
+                                                    value={vueltoAsignado.pago_movil}
+                                                    onChange={v => handleVueltoChange('pago_movil', v)}
+                                                    placeholder="0,00"
+                                                    color="#ff9800"
+                                                    disabled={tasaBcv === 0}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.3rem' }}>VUELTO TRANSFERENCIA (BS)</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900 }}>Bs</div>
+                                                <BsInput
+                                                    value={vueltoAsignado.transferencia}
+                                                    onChange={v => handleVueltoChange('transferencia', v)}
+                                                    placeholder="0,00"
+                                                    color="#00bcd4"
+                                                    disabled={tasaBcv === 0}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
+                                </motion.div>
+                            )}
 
-                                    <div>
-                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#ff9800', display: 'block', marginBottom: '0.3rem' }}>VUELTO PAGO MÓVIL (BS)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#ff9800', fontWeight: 900 }}>Bs</div>
-                                            <BsInput
-                                                value={vueltoAsignado.pago_movil}
-                                                onChange={v => handleVueltoChange('pago_movil', v)}
-                                                placeholder="0,00"
-                                                color="#ff9800"
-                                                disabled={tasaBcv === 0}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label style={{ fontSize: '0.55rem', fontWeight: 800, color: '#00bcd4', display: 'block', marginBottom: '0.3rem' }}>VUELTO TRANSFERENCIA (BS)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#00bcd4', fontWeight: 900 }}>Bs</div>
-                                            <BsInput
-                                                value={vueltoAsignado.transferencia}
-                                                onChange={v => handleVueltoChange('transferencia', v)}
-                                                placeholder="0,00"
-                                                color="#00bcd4"
-                                                disabled={tasaBcv === 0}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={!puedeConfirmar || loading}
-                            style={{
-                                height: '3.5rem',
-                                fontSize: '0.9rem',
-                                fontWeight: 900,
-                                borderRadius: '10px',
-                                cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
-                                border: 'none',
-                                background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
-                                color: puedeConfirmar ? '#000' : '#555',
-                                opacity: loading ? 0.7 : 1,
-                                letterSpacing: '0.1em'
-                            }}
-                        >
-                            {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}
-                        </button>
-                    </form>
-                </div>
+                            <button
+                                type="submit"
+                                disabled={!puedeConfirmar || loading}
+                                style={{
+                                    height: '3.5rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 900,
+                                    borderRadius: '10px',
+                                    cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
+                                    border: 'none',
+                                    background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
+                                    color: puedeConfirmar ? '#000' : '#555',
+                                    opacity: loading ? 0.7 : 1,
+                                    letterSpacing: '0.1em',
+                                    marginTop: '0.5rem'
+                                }}
+                            >
+                                {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </motion.div>
         </motion.div>
     )

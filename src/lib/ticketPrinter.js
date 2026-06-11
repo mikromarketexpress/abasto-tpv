@@ -149,6 +149,8 @@ export function abrirTicketImpresion(datos) {
         '<div class="info-row"><span>FECHA</span><span class="bold">' + fmtFecha(fecha) + '</span></div>' +
         '<div class="info-row"><span>SESION CAJA</span><span class="bold">' + (sesionCajaId ? String(sesionCajaId).slice(0, 15) : '-') + '</span></div>' +
         '<div class="info-row"><span>TASA BCV</span><span class="bold">Bs ' + fmtBS(tasaValida) + '</span></div>' +
+        (datos.clienteNombre ? '<div class="info-row"><span>CLIENTE</span><span class="bold">' + String(datos.clienteNombre).toUpperCase() + '</span></div>' : '') +
+        (datos.clienteIdentificacion ? '<div class="info-row"><span>' + (datos.clienteTipo === 'Persona Natural' ? 'CÉDULA' : 'RIF') + '</span><span class="bold">' + String(datos.clienteIdentificacion).toUpperCase() + '</span></div>' : '') +
 
         '<div class="divider"></div>' +
 

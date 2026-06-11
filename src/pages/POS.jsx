@@ -1222,43 +1222,45 @@ const PaymentModal = ({
                                     </div>
                                 </motion.div>
                             )}
+                        </div>
+                    </div>
 
-                            <div style={{ display: 'flex', gap: '1.25rem', marginTop: '1rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={onEditOrder}
-                                    className="s-btn s-btn-secondary"
-                                    style={{
-                                        flex: 1,
-                                        height: '4.5rem',
-                                        fontSize: '1.3rem',
-                                        fontWeight: 900,
-                                        borderRadius: '12px',
-                                        letterSpacing: '0.1em'
-                                    }}
-                                >
-                                    ← EDITAR PEDIDO
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={!puedeConfirmar || loading}
-                                    style={{
-                                        flex: 1.5,
-                                        height: '4.5rem',
-                                        fontSize: '1.3rem',
-                                        fontWeight: 900,
-                                        borderRadius: '12px',
-                                        cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
-                                        border: 'none',
-                                        background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
-                                        color: puedeConfirmar ? '#000' : '#555',
-                                        opacity: loading ? 0.7 : 1,
-                                        letterSpacing: '0.1em'
-                                    }}
-                                >
-                                    {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}
-                                </button>
-                            </div>
+                    <div style={{ padding: '1.25rem 2.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', gap: '1.25rem' }}>
+                            <button
+                                type="button"
+                                onClick={onEditOrder}
+                                className="s-btn s-btn-secondary"
+                                style={{
+                                    flex: 1,
+                                    height: '4.2rem',
+                                    fontSize: '1.3rem',
+                                    fontWeight: 900,
+                                    borderRadius: '12px',
+                                    letterSpacing: '0.1em'
+                                }}
+                            >
+                                ← EDITAR PEDIDO
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={!puedeConfirmar || loading}
+                                style={{
+                                    flex: 1.5,
+                                    height: '4.2rem',
+                                    fontSize: '1.3rem',
+                                    fontWeight: 900,
+                                    borderRadius: '12px',
+                                    cursor: (!puedeConfirmar || loading) ? 'not-allowed' : 'pointer',
+                                    border: 'none',
+                                    background: puedeConfirmar ? 'linear-gradient(135deg, var(--s-neon), #00b248)' : 'rgba(255,255,255,0.05)',
+                                    color: puedeConfirmar ? '#000' : '#555',
+                                    opacity: loading ? 0.7 : 1,
+                                    letterSpacing: '0.1em'
+                                }}
+                            >
+                                {loading ? 'PROCESANDO...' : '✓ CONFIRMAR PAGO'}
+                            </button>
                         </div>
                     </div>
                 </form>

@@ -1676,6 +1676,29 @@ const PaymentModal = ({
                                                 </div>
                                                 <button
                                                     type="button"
+                                                    onClick={() => handleChange(id, '')}
+                                                    disabled={isBsDisabled}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        borderRadius: '10px',
+                                                        width: '3.5rem',
+                                                        height: '3.5rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: '#ff5252',
+                                                        cursor: isBsDisabled ? 'not-allowed' : 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => { if (!isBsDisabled) { e.currentTarget.style.background = 'rgba(255,82,82,0.1)'; e.currentTarget.style.borderColor = '#ff5252'; } }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                                    title="Limpiar monto"
+                                                >
+                                                    <Brush size={18} />
+                                                </button>
+                                                <button
+                                                    type="button"
                                                     onClick={() => handlePaste(id, pType)}
                                                     disabled={isBsDisabled}
                                                     style={{

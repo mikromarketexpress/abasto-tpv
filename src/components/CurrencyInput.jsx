@@ -1,8 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { formatUSD, formatVENumber, handleCurrencyInput } from '../lib/financialUtils'
+import { formatUSD, formatVENumber, handleCurrencyInput, parseVENumber, parseUSDNumber } from '../lib/financialUtils'
+
+const parseValue = (value, currency) => {
+    if (value === null || value === undefined || value === '') return 0
+    if (typeof value === 'number') return value
+    const str = String(value)
+    return currency === 'BS' ? parseVENumber(str) : parseUSDNumber(str)
+}
 
 const formatDisplay = (value, currency) => {
-    const num = parseFloat(value) || 0
+    const num = parseValue(value, currency)
     return currency === 'BS' ? formatVENumber(num) : formatUSD(num)
 }
 
@@ -19,9 +26,9 @@ const CurrencyInput = ({ currency = 'USD', value, onChange, disabled, placeholde
     const handleKeyDown = useCallback((e) => {
         if (disabled) return
 
-        const newValue = handleCurrencyInput(e, value, currency)
-        const currentParsed = parseFloat(value) || 0
-        if (Math.abs(newValue - currentParsed) > 0.0001) {
+        const parsedValue = parseValue(value, currency)
+        const newValue = handleCurrencyInput(e, parsedValue, currency)
+        if (Math.abs(newValue - parsedValue) > 0.0001) {
             setDisplayValue(formatDisplay(newValue, currency))
             onChange?.(newValue)
         }
